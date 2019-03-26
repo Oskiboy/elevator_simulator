@@ -1,8 +1,8 @@
 # Elevator simulator
 
-## Build:
+## Build
 
-To build run 
+To build run
 
 ```bash
 ./build.sh
