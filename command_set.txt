@@ -30,3 +30,7 @@
     LIGHT_FLOOR_4,
     MOTOR_DIR,
     MOTOR_SPEED
+
+New command set:
+Commands are 4 bytes
+char command[] = {COMMAND, SELECTOR, FLOOR, VALUE}
