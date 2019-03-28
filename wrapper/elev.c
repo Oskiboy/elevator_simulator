@@ -20,8 +20,10 @@
 #define PORT 6060
 #define N_BUTTONS 3
 
+
 static int sockfd;
 static struct sockaddr_in servaddr;
+
 
 #ifdef TTK_SIM
 static void write_to_socket(char* cmd) {
@@ -77,7 +79,7 @@ int elev_init(void) {
 
 void elev_set_motor_direction(elev_motor_direction_t dirn) {
     #ifdef TTK_SIM
-    char cmd[4] = {1, (int)dirn, 0, 0};
+    char cmd[4] = {1, (char)dirn, 0, 0};
     write_to_socket(cmd);
     #else
     write_to_socket("set MOTOR_DIR", (int)dirn);
@@ -86,7 +88,7 @@ void elev_set_motor_direction(elev_motor_direction_t dirn) {
 
 void elev_set_door_open_lamp(int value) {
     #ifdef TTK_SIM
-    char cmd[4] = {1, (int)dirn, 0, 0};
+    char cmd[4] = {4 , (char)value, 0, 0};
     write_to_socket(cmd);
     #else
     write_to_socket("set DOOR_LAMP", value);
@@ -95,8 +97,9 @@ void elev_set_door_open_lamp(int value) {
 
 int elev_get_obstruction_signal(void) {
     #ifdef TTK_SIM
-    char cmd[4] = {1, (int)dirn, 0, 0};
+    char cmd[4] = {9, 0, 0, 0};
     write_to_socket(cmd);
+    return (int)cmd[1];
     #else
     return write_to_socket("get OBSTRUCTION", 0);
     #endif
@@ -104,8 +107,9 @@ int elev_get_obstruction_signal(void) {
 
 int elev_get_stop_signal(void) {
     #ifdef TTK_SIM
-    char cmd[4] = {1, (int)dirn, 0, 0};
+    char cmd[4] = {8, 0, 0, 0};
     write_to_socket(cmd);
+    return (int)cmd[1];
     #else
     return write_to_socket("get STOP_BUTTON", 0);
     #endif
@@ -113,7 +117,7 @@ int elev_get_stop_signal(void) {
 
 void elev_set_stop_lamp(int value) {
     #ifdef TTK_SIM
-    char cmd[4] = {1, (int)dirn, 0, 0};
+    char cmd[4] = {5, (char)value, 0, 0};
     write_to_socket(cmd);
     #else
     write_to_socket("set LIGHT_STOP", value);
@@ -122,8 +126,9 @@ void elev_set_stop_lamp(int value) {
 
 int elev_get_floor_sensor_signal(void) {  
     #ifdef TTK_SIM
-    char cmd[4] = {1, (int)dirn, 0, 0};
+    char cmd[4] = {7, 0, 0, 0};
     write_to_socket(cmd);
+    return (int)cmd[1];
     #else  
     return write_to_socket("get FLOOR_SENSOR", 0);
     #endif
@@ -133,7 +138,7 @@ void elev_set_floor_indicator(int floor) {
     assert(floor >= 0);
     assert(floor < N_FLOORS);
     #ifdef TTK_SIM
-    char cmd[4] = {1, (int)dirn, 0, 0};
+    char cmd[4] = {3, (char)floor, 0, 0};
     write_to_socket(cmd);
     #else
     switch (floor)
@@ -163,8 +168,9 @@ int elev_get_button_signal(elev_button_type_t button, int floor) {
     assert(!(button == BUTTON_CALL_DOWN && floor == 0));
     assert(button == BUTTON_CALL_UP || button == BUTTON_CALL_DOWN || button == BUTTON_COMMAND);
     #ifdef TTK_SIM
-    char cmd[4] = {1, (int)dirn, 0, 0};
+    char cmd[4] = {6, (char)button, (char)floor, 0};
     write_to_socket(cmd);
+    return (int)cmd[1];
     #else
     switch (button)
     {
@@ -236,7 +242,7 @@ void elev_set_button_lamp(elev_button_type_t button, int floor, int value) {
     assert(!(button == BUTTON_CALL_DOWN && floor == 0));
     assert(button == BUTTON_CALL_UP || button == BUTTON_CALL_DOWN || button == BUTTON_COMMAND);
     #ifdef TTK_SIM
-    char cmd[4] = {1, (int)dirn, 0, 0};
+    char cmd[4] = {2, (char)button, (char)floor, (char)value};
     write_to_socket(cmd);
     #else
     switch (button)

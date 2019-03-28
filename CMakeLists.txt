@@ -8,6 +8,7 @@ add_library(logger_lib "src/logger.cpp")
 add_library(server_lib "src/server.cpp")
 add_library(elev_lib "src/elevator.cpp")
 
+
 target_link_libraries(server_lib logger_lib pthread)
 
 add_executable(sim_server "src/main.cpp")
