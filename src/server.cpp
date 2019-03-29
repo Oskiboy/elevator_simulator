@@ -127,10 +127,10 @@ void ElevServer::handleConnection() {
         throw SocketAcceptException();
     }
 
-    char buffer[256];
-    bzero(&buffer, 255);
+    char buffer[4];
+    bzero(&buffer, 4);
 
-    ret = read(conn_fd, buffer, 255);
+    ret = read(conn_fd, buffer, 4 * sizeof(buffer[0]));
     if(ret < 0) {
         logger.error("Could not read from the new connection");
         throw SocketReadException();
@@ -139,8 +139,10 @@ void ElevServer::handleConnection() {
     std::string msg = std::string(buffer);
     logger.info("New message received: " + msg);
 
-    std::string response = handleMessage(msg);
-    ret = write(conn_fd, response.c_str(), response.length());
+    std::string response = handleMessage(buffer);
+    if(buffer[0] > 5) {
+        ret = write(conn_fd, response.c_str(), response.length());
+    }
 
     if(ret < 0) {
         logger.error("Could not write to the connection");
@@ -150,155 +152,102 @@ void ElevServer::handleConnection() {
     conn_mtx.unlock();
 }
 
-std::string ElevServer::handleMessage(const std::string &msg) {
+std::string ElevServer::handleMessage(const char msg[4]) {
     command_t cmd;
-    elev_data_t data;
-    logger.info("Tokenizing message");
-    std::vector<std::string> t = tokenizeMessage(msg);
     logger.info("Parsing message");
-    cmd = parseMessage(t);
+    cmd = parseMessage(msg);
     logger.info("Executing commands");
-    data = executeCommand(cmd);
+    cmd = executeCommand(cmd);
     logger.info("Crafting response");
-    return createResponse(cmd, data);
+    return createResponse(cmd);
 }
 
-std::string ElevServer::createResponse(command_t cmd, elev_data_t data) {
-    std::string response = "";
-    if(data.valid) {
-        response = std::to_string(data.data);
+std::string ElevServer::createResponse(command_t cmd) {
+    char response[4] = {0, 0, 0, 0};
+    if(cmd.cmd != CommandType::ERROR) {
+        response[0] = cmd.msg[0];
+        response[1] = cmd.value;
+        response[2] = cmd.floor;
+        response[3] = cmd.msg[3];
     } else {
-        response =  "ERROR - Command not recognized!\n"
-                    "usage:\n"
-                    "   get/set [COMMAND]\n"
-                    "commands:\n";
-        for(auto it = commands.begin(); it != commands.end(); ++it) {
-            response += "\t";
-            response += it->first;
-            response += "\n";
-        }
-            /*
-                "   BUTTON_COMMAND_1,"
-                "   BUTTON_COMMAND_2,"
-                "   BUTTON_COMMAND_3,"
-                "   BUTTON_COMMAND_4,"
-                "   BUTTON_UP_1,"
-                "   BUTTON_UP_2,"
-                "   BUTTON_UP_3, "
-                "   BUTTON_DOWN_2,"
-                "   BUTTON_DOWN_3,"
-                "   BUTTON_DOWN_4,"
-                "   STOP_BUTTON,"
-                "   OBSTRUCTION,"
-                "   FLOOR_SENSOR,"
-                "   DOOR_LAMP,"
-                "   LIGHT_STOP,"
-                "   LIGHT_COMMAND_1,"
-                "   LIGHT_COMMAND_2,"
-                "   LIGHT_COMMAND_3,"
-                "   LIGHT_COMMAND_4,"
-                "   LIGHT_UP_1,"
-                "   LIGHT_UP_2,"
-                "   LIGHT_UP_3,"
-                "   LIGHT_DOWN_2,"
-                "   LIGHT_DOWN_3,"
-                "   LIGHT_DOWN_4,"
-                "   LIGHT_FLOOR_1,"
-                "   LIGHT_FLOOR_2,"
-                "   LIGHT_FLOOR_3,"
-                "   LIGHT_FLOOR_4,"
-                "   MOTOR_DIR,"
-                "   MOTOR_SPEED";
-                */
+        response[0] = -1;
     }
-    return response;
-}
-std::vector<std::string> ElevServer::tokenizeMessage(std::string msg) {
-    //msg.erase(msg.end()-1); //This only seems to be nessecary if the socket sends garbage data at the end.
-    std::vector<std::string> tokens;
-    std::stringstream ss(msg);
-    std::string token;
-    
-    while(std::getline(ss, token, ' ')) {
-        tokens.push_back(token);
-    }
-    return tokens;
+    return std::string(response);
 }
 
-command_t ElevServer::parseMessage(const std::vector<std::string> &tokens) {
+
+command_t ElevServer::parseMessage(const char msg[4]) {
     /*
     Message format:
         elevator_id <value, default 0> get/set command <which_instance> <data> 
     */
     //TODO: This needs some cleanup and/or a neater solution
-    command_t cmd{-1, CommandType::GET, Signals::NUM_SIGNALS, 0};
-    for(auto it = tokens.begin(); it != tokens.end(); ++it) {
-        logger.info("Parsing token: [" + *it + "]");
-        if(*it == "id") {
-            try {
-                cmd.id = std::stoi(*(++it));
-            } catch(const std::exception &e) {
-                logger.error("Malformed message received");
-            }
-        } else if(*it == "get") {
-            cmd.cmd_type = CommandType::GET;
-        } else if(*it == "set") {
-            cmd.cmd_type = CommandType::SET;
-        } else {
-            try {
-                cmd.signal = commands.at(*it);
-                if(cmd.cmd_type == CommandType::SET) {
-                    try {
-                        if((it+1) == tokens.end()) {
-                            cmd.value = 0;
-                        } else {
-                            cmd.value = std::stoi(*(++it));
-                        }
-                    } catch(const std::invalid_argument &e) {
-                        logger.error("Could not convert argument to int");
-                        cmd.value = 0;
-                    }
-                }
-            } catch (const std::out_of_range &e){
-               logger.error("Misformed command: [" + *it + "]");
-            }
+    command_t cmd{CommandType::ERROR, CommandSignal::NUM_SIGNALS, 0,0,0,0,0};
+    switch (msg[0])
+    {
+        case 1:
+            cmd.signal = CommandSignal::MOTOR;
+            break;
+        case 2:
+            cmd.signal = CommandSignal::BUTTON;
+            cmd.selector = msg[1];
+            break;
+        case 3:
+            cmd.signal = CommandSignal::FLOOR_SENSOR;
+            break;
+        case 4:
+            cmd.signal = CommandSignal::DOOR_LIGHT;
+            break;
+        case 5:
+            cmd.signal = CommandSignal::STOP_LIGHT;
+            break;
+        case 6:
+            cmd.signal = CommandSignal::BUTTON;
+            cmd.selector = msg[1];
+            break;
+        case 7:
+            cmd.signal = CommandSignal::FLOOR_SENSOR;
+            break;
+        case 8:
+            cmd.signal = CommandSignal::STOP;
+            break;
+        case 9:
+            cmd.signal = CommandSignal::OBSTRUCTION;
+            break;
+        default:
+            cmd.signal = CommandSignal::NUM_SIGNALS;
+            break;
+    }
+    cmd.cmd =       ((msg[0] > 5) ? CommandType::GET : CommandType::SET);
+    cmd.floor =     msg[2];
+    cmd.value =     msg[3];
+    cmd.selector =  msg[2];
+    cmd.elevator_num = 0;
 
-        }
-    }
-    if(cmd.id < 0) {
-        cmd.id = 0;
-    }
     return cmd;
 }
 
-elev_data_t ElevServer::executeCommand(const command_t &cmd) {
+command_t ElevServer::executeCommand(const command_t &cmd) {
     std::shared_ptr<elev::Elevator> e_ptr;
-    elev_data_t d{0, true};
-
-    if (cmd.signal == Signals::NUM_SIGNALS) {
-        d.valid = false;
-        return d;
-    }
-
+    command_t ret{};
     for(auto e: elevators) { 
-        if(e->getId() == cmd.id) {
+        if(e->getId() == cmd.elevator_num) {
             e_ptr = e;
         }
     }
 
-    if(cmd.cmd_type == CommandType::SET) {
-       d.data = e_ptr->setSignal(cmd.signal, cmd.value);
+    if(cmd.cmd == CommandType::SET) {
+        ret = e_ptr->executeCommand(cmd);
 
-    } else if(cmd.cmd_type == CommandType::GET) {
-        d.data = e_ptr->getSignal(cmd.signal);
+    } else if(cmd.cmd == CommandType::GET) {
+        ret = e_ptr->executeCommand(cmd);
 
     } else {
         logger.error("Malformed command received");
-        d.valid = false;
-
+        ret.cmd = CommandType::ERROR;
     }
 
-    return d;
+    return ret;
 }
 
 bool ElevServer::ok(void) {

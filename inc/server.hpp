@@ -10,28 +10,10 @@
 #include <elevator.hpp>
 #include <logger.hpp>
 #include <signals.hpp>
+#include <commands.hpp>
 
 #include <sys/socket.h>
 #include <netinet/in.h>
-
-
-
-enum class CommandType {
-    GET = 1,
-    SET = -1
-};
-
-typedef struct {
-    int id;
-    CommandType cmd_type;
-    Signals signal;
-    int value;
-} command_t;
-
-typedef struct{
-    int data;
-    bool valid;
-} elev_data_t;
 
 namespace elev {
 class Elevator;
@@ -47,12 +29,11 @@ class ElevServer {
         void    stop(void);
         
     private:
-        void                        handleConnection();
-        std::string                 handleMessage(const std::string &msg);
-        std::vector<std::string>    tokenizeMessage(std::string);
-        command_t                   parseMessage(const std::vector<std::string> &tokens);
-        elev_data_t                 executeCommand(const command_t &cmd);
-        std::string                 createResponse(command_t cmd, elev_data_t data);
+        void        handleConnection();
+        std::string handleMessage(const char msg[4]);
+        command_t   parseMessage(const char msg[4]);
+        command_t   executeCommand(const command_t &cmd);
+        std::string createResponse(command_t cmd);
         
         void runThreads();
         void joinThreads();
