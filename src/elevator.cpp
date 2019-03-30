@@ -17,6 +17,7 @@ Elevator::Elevator(int id, int num_floors):
     signals.buttons = std::unique_ptr<int[][3]>(new int[_num_floors][3]);
     signals.lights = std::unique_ptr<int[]>(new int[_num_floors]);
     nullSignals();
+    signals.motor.speed = _motor_speed;
     timestamp = std::chrono::system_clock::now();
 }
 
@@ -57,7 +58,10 @@ void Elevator::run(void) {
     ok_mtx.unlock();
 
     while(ok()) {
+        sig_m.lock();
         update();
+        sig_m.unlock();
+        //std::cout << signals.position << std::endl;
         usleep(20);
     }
 }
@@ -86,7 +90,7 @@ void Elevator::update(void) {
 
 
 void Elevator::updatePosition(void) {
-    std::lock_guard<std::mutex> lock(sig_m);
+    
     signals.position += static_cast<int>(signals.motor.direction) * signals.motor.speed * dt;
 
     //Be careful to check for boundry conditions.
@@ -96,6 +100,7 @@ void Elevator::updatePosition(void) {
     if(signals.position < 0) {
         signals.position = 0;
     }
+    std::cout << "Position: " << signals.position << std::endl;
 }
 
 
@@ -112,14 +117,14 @@ void Elevator::updateSignals(void) {
     //if the elevator is close enough to a floor. 
     for(int i = 0; i < 4; ++i) {
         if(std::abs(pos - (i * TRACK_LENGTH / 3.0)) < 0.01) {
-            sig_m.lock();
+            
             signals.floor_sensor = i + 1;
-            sig_m.unlock();
+    
             break;
         } else {
-            sig_m.lock();
+            
             signals.floor_sensor = -1;
-            sig_m.unlock();
+            
         }
     }
 }
@@ -197,7 +202,8 @@ void Elevator::setSignal(const command_t &cmd) {
 }
 
 command_t Elevator::executeCommand(const command_t &cmd) {
-    command_t ret{};
+    command_t ret = cmd;
+    std::cout << ret;
     if(cmd.cmd == CommandType::GET) {
         ret.value = getSignal(cmd);
     } else {
