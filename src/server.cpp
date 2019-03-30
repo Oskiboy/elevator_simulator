@@ -70,9 +70,26 @@ void ElevServer::run(void) {
 
     joinThreads();
     logger.info("All threads joined.");
-    close(server_fd);
-    close(conn_fd);
+
+    ret = close(server_fd);
+    if(ret < 0) {
+        logger.error("Could not close server socket! ERROR CODE: " + std::to_string(ret));
+    }
+    ret = close(conn_fd);
+    if(ret < 0) {
+        logger.error("Could not close client socket! ERROR CODE: " + std::to_string(ret));
+    }
     logger.info("All sockets closed");
+}
+
+bool ElevServer::ok(void) {
+    std::lock_guard<std::mutex> lock(ok_mtx);
+    return running;
+}
+
+void ElevServer::stop(void) {
+    std::lock_guard<std::mutex> lock(ok_mtx);
+    running = false;
 }
 
 void ElevServer::runThreads() {
@@ -135,13 +152,22 @@ void ElevServer::handleConnection() {
         logger.error("Could not read from the new connection");
         throw SocketReadException();
     }
-
-    std::string msg = std::string(buffer);
+    std::string msg = "";
+    for(int i = 0; i < 4; ++i) {
+        msg += std::to_string(buffer[i]) + " ";
+    }
     logger.info("New message received: " + msg);
 
-    std::string response = handleMessage(buffer);
+    char *response = handleMessage(buffer);
+    /*
+    std::cout <<"Response:" << std::endl;
+    for(int i = 0; i < 4; ++i) {
+        std::cout << (int)response[i] << ",";
+    }
+    std::cout << std::endl;
+    */
     if(buffer[0] > 5) {
-        ret = write(conn_fd, response.c_str(), response.length());
+        ret = write(conn_fd, response, 4*sizeof(char));
     }
 
     if(ret < 0) {
@@ -152,18 +178,18 @@ void ElevServer::handleConnection() {
     conn_mtx.unlock();
 }
 
-std::string ElevServer::handleMessage(const char msg[4]) {
+char* ElevServer::handleMessage(const char msg[4]) {
     command_t cmd;
-    logger.info("Parsing message");
     cmd = parseMessage(msg);
-    logger.info("Executing commands");
-    cmd = executeCommand(cmd);
-    logger.info("Crafting response");
-    return createResponse(cmd);
+    //std::cout << "From parser:\n" << cmd;
+    command_t ret = executeCommand(cmd);
+    //std::cout << "From elevator:\n" << ret;
+    return createResponse(ret);
 }
 
-std::string ElevServer::createResponse(command_t cmd) {
-    char response[4] = {0, 0, 0, 0};
+char* ElevServer::createResponse(command_t cmd) {
+    //std::cout << cmd.value << " " << cmd.floor << " " << cmd.msg << std::endl;
+    static char response[4] = {0, 0, 0, 0};
     if(cmd.cmd != CommandType::ERROR) {
         response[0] = cmd.msg[0];
         response[1] = cmd.value;
@@ -172,9 +198,8 @@ std::string ElevServer::createResponse(command_t cmd) {
     } else {
         response[0] = -1;
     }
-    return std::string(response);
+    return response;
 }
-
 
 command_t ElevServer::parseMessage(const char msg[4]) {
     /*
@@ -183,14 +208,25 @@ command_t ElevServer::parseMessage(const char msg[4]) {
     */
     //TODO: This needs some cleanup and/or a neater solution
     command_t cmd{CommandType::ERROR, CommandSignal::NUM_SIGNALS, 0,0,0,0,0};
+    for(int i = 0; i < 4; ++i) {
+        cmd.msg[i] = msg[i];    
+    }
+    cmd.cmd =       ((msg[0] > 5) ? CommandType::GET : CommandType::SET);
+    cmd.floor =     msg[2];
+    cmd.value =     msg[3];
+    cmd.selector =  msg[2];
+    cmd.elevator_num = 0;
     switch (msg[0])
     {
         case 1:
             cmd.signal = CommandSignal::MOTOR;
+            cmd.value = msg[1];
             break;
         case 2:
             cmd.signal = CommandSignal::BUTTON;
             cmd.selector = msg[1];
+            cmd.floor = msg[2];
+            cmd.value = msg[3];
             break;
         case 3:
             cmd.signal = CommandSignal::FLOOR_SENSOR;
@@ -204,6 +240,8 @@ command_t ElevServer::parseMessage(const char msg[4]) {
         case 6:
             cmd.signal = CommandSignal::BUTTON;
             cmd.selector = msg[1];
+            cmd.floor = msg[2];
+            cmd.value = msg[3];
             break;
         case 7:
             cmd.signal = CommandSignal::FLOOR_SENSOR;
@@ -214,48 +252,38 @@ command_t ElevServer::parseMessage(const char msg[4]) {
         case 9:
             cmd.signal = CommandSignal::OBSTRUCTION;
             break;
+            //TODO: Add 255 as get position
         default:
             cmd.signal = CommandSignal::NUM_SIGNALS;
             break;
     }
-    cmd.cmd =       ((msg[0] > 5) ? CommandType::GET : CommandType::SET);
-    cmd.floor =     msg[2];
-    cmd.value =     msg[3];
-    cmd.selector =  msg[2];
-    cmd.elevator_num = 0;
+
 
     return cmd;
 }
 
 command_t ElevServer::executeCommand(const command_t &cmd) {
     std::shared_ptr<elev::Elevator> e_ptr;
-    command_t ret{};
+    command_t ret{CommandType::ERROR, CommandSignal::NUM_SIGNALS, 0,0,0,0,0};
+    for(int i = 0; i < 4; ++i) {
+        ret.msg[i] = cmd.msg[i];    
+    }
+    //Select the appropriate elevator.
     for(auto e: elevators) { 
         if(e->getId() == cmd.elevator_num) {
             e_ptr = e;
         }
     }
-
-    if(cmd.cmd == CommandType::SET) {
-        ret = e_ptr->executeCommand(cmd);
-
-    } else if(cmd.cmd == CommandType::GET) {
-        ret = e_ptr->executeCommand(cmd);
-
-    } else {
+    //If the command type is valid, run it on the elevator.
+    if(cmd.cmd == CommandType::ERROR) {
         logger.error("Malformed command received");
         ret.cmd = CommandType::ERROR;
+    } else {
+        ret = e_ptr->executeCommand(cmd);
     }
+    //std::cout << "Return from elevator\n" << ret;
 
     return ret;
 }
 
-bool ElevServer::ok(void) {
-    std::lock_guard<std::mutex> lock(ok_mtx);
-    return running;
-}
 
-void ElevServer::stop(void) {
-    std::lock_guard<std::mutex> lock(ok_mtx);
-    running = false;
-}

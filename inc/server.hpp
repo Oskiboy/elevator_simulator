@@ -29,11 +29,12 @@ class ElevServer {
         void    stop(void);
         
     private:
+        void        disconnect();
         void        handleConnection();
-        std::string handleMessage(const char msg[4]);
+        char*       handleMessage(const char msg[4]);
         command_t   parseMessage(const char msg[4]);
         command_t   executeCommand(const command_t &cmd);
-        std::string createResponse(command_t cmd);
+        char*       createResponse(command_t cmd);
         
         void runThreads();
         void joinThreads();
