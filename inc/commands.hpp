@@ -1,6 +1,8 @@
 #ifndef COMMANDS_HPP
 #define COMMANDS_HPP
 
+#include <iostream>
+
 enum class CommandType {
     GET= -1,
     SET=  1,
@@ -38,5 +40,6 @@ typedef struct {
     char            msg[4];
 } command_t;
 
+std::ostream& operator << (std::ostream& os, const command_t &cmd);
 
 #endif //COMMANDS_HPP
