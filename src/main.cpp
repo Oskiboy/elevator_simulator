@@ -23,7 +23,7 @@ int main(int argc, char** argv) {
     std::string cmd = "";
     std::cout << "Starting server..." << std::endl;
     try {
-        e_ptr = std::make_shared<ElevServer>(6060, 1, "test.log");
+        e_ptr = std::make_shared<ElevServer>(6060, 1, "logs/test.log");
         server = std::thread(&ElevServer::run, e_ptr);
         std::cout << "Server started!" << std::endl;
     } catch(const std::exception& e) {
