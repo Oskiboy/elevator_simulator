@@ -6,6 +6,7 @@
 #include <array>
 
 #include <commands.hpp>
+#include <button_press.hpp>
 
 #include <sys/time.h>
 
@@ -41,6 +42,7 @@ typedef struct {
 } ElevatorSignals_t;
 
 typedef std::chrono::time_point<std::chrono::system_clock> sysclk_t;
+class ButtonPress;
 
 class Elevator {
     public:
@@ -76,6 +78,7 @@ class Elevator {
 
         //Signals
         ElevatorSignals_t signals;
+        std::vector<ButtonPress> events;
 
         //Motor stuff
         Direction   _last_dir;
