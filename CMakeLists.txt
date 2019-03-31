@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.0)
 project(elevator_simulator)
 
 include_directories(inc)
+set(CMAKE_CXX_COMPILER g++)
 add_compile_options(-std=c++14 -Wall -Werror -g3)
 
 add_library(logger_lib "src/logger.cpp")

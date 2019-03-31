@@ -1,6 +1,7 @@
 #include <cmath>
 #include <iostream>
 #include <thread>
+#include <algorithm>
 
 #include <elevator.hpp>
 
@@ -120,6 +121,10 @@ void Elevator::updateSignals(void) {
             
         }
     }
+    std::remove_if(events.begin(), events.end(), [=](ButtonPress b){
+        return b.poll();
+    }
+    );
 }
 
 int Elevator::getId(void) {
@@ -159,7 +164,11 @@ void Elevator::setSignal(const command_t &cmd) {
     std::lock_guard<std::mutex>lock(sig_m);
     switch(cmd.signal) {
         case CommandSignal::BUTTON:
-            signals.buttons[cmd.floor][cmd.selector] = cmd.value;
+            events.push_back(
+                ButtonPress(std::chrono::system_clock::now(),
+                        &signals.buttons[cmd.floor][cmd.selector],
+                        &sig_m)
+            );
             break;
         case CommandSignal::LIGHT:
             signals.lights[cmd.floor] = cmd.value;

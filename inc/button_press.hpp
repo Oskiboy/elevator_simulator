@@ -16,6 +16,7 @@ class ButtonPress {
         int* btn;
         std::mutex* sig_m;
 };
+
 } //namespace elev
 
 #endif //BUTTON_PRESS_HPP
