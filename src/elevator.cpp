@@ -180,7 +180,6 @@ void Elevator::setSignal(const command_t &cmd) {
 
 command_t Elevator::executeCommand(const command_t &cmd) {
     command_t ret = cmd;
-    std::cout << ret;
     if(cmd.cmd == CommandType::GET) {
         ret.value = getSignal(cmd);
     } else {

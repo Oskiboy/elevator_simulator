@@ -41,6 +41,7 @@ typedef struct {
     double      position;
 } ElevatorSignals_t;
 
+typedef std::chrono::time_point<std::chrono::system_clock> sysclk_t;
 
 class Elevator {
     public:
@@ -59,20 +60,20 @@ class Elevator {
 
         double  getElevatorPosition(void);
     private:
-        void updatePosition(void);
-        void updateSignals(void);
-        void updateTime(void);
-        void nullSignals();
+        void    updatePosition(void);
+        void    updateSignals(void);
+        void    updateTime(void);
+        void    nullSignals();
 
-        int getSignal(const command_t &cmd);
-        void setSignal(const command_t &cmd);
+        int     getSignal(const command_t &cmd);
+        void    setSignal(const command_t &cmd);
 
     private:
-        const int _id;
+        const int   _id;
         int         _num_floors;
 
-        std::mutex sig_m, ok_mtx;
-        bool running;
+        std::mutex  sig_m, ok_mtx;
+        bool        running;
 
         //Signals
         ElevatorSignals_t signals;
@@ -82,7 +83,7 @@ class Elevator {
 
         //Timestamps
         double      dt;
-        std::chrono::time_point<std::chrono::system_clock> timestamp, t;
+        sysclk_t    timestamp, t;
 };
 } //namespace elev
 #endif //ELEVATOR_HPP

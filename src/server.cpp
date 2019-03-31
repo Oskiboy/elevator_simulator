@@ -187,6 +187,12 @@ void ElevServer::handleConnections() {
             logger.error("Could not write to the connection");
             throw SocketWriteException();
         }
+    } else if(buffer[0] == 255) {
+        ret = write(conn_fd, buffer, 40 * sizeof(char));
+        if(ret < 0) {
+            logger.error("Could not write to the connection");
+            throw SocketWriteException();
+        }
     }
 
     close(conn_fd);
@@ -194,14 +200,14 @@ void ElevServer::handleConnections() {
 }
 
 char* ElevServer::handleMessage(const char msg[4]) {
-    command_t cmd;
+    command_t cmd, ret;
     cmd = parseMessage(msg);
-    command_t ret = executeCommand(cmd);
+    ret = executeCommand(cmd);
     return createResponse(ret);
 }
 
 char* ElevServer::createResponse(command_t cmd) {
-    static char response[4];
+    static char response[40];
     bzero(&response, sizeof(response));
 
     if(cmd.cmd != CommandType::ERROR) {
@@ -214,6 +220,10 @@ char* ElevServer::createResponse(command_t cmd) {
         response[1] = 255;
         response[2] = 255;
         response[3] = 255;
+    }
+
+    if(cmd.msg[0] == 255) {
+        response[4] = cmd.position;
     }
 
     return response;
@@ -239,7 +249,7 @@ command_t ElevServer::parseMessage(const char msg[4]) {
         }
     };
 
-    switch (msg[0])
+    switch ((unsigned char)msg[0])
     {
         case 1:
             cmd.signal  = CommandSignal::MOTOR;
@@ -275,7 +285,13 @@ command_t ElevServer::parseMessage(const char msg[4]) {
         case 9:
             cmd.signal = CommandSignal::OBSTRUCTION;
             break;
-            //TODO: Add 255 as get position
+        case 10:
+            cmd.signal  = CommandSignal::BUTTON;
+            cmd.cmd     = CommandType::SET;
+            break;
+        case 255:
+            cmd.signal  = CommandSignal::POSITION;
+            break;
         default:
             cmd.signal = CommandSignal::NUM_SIGNALS;
             break;
