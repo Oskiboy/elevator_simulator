@@ -12,7 +12,7 @@ bool ButtonPress::poll(void) {
     //dt is milliseconds
     auto dt = (pressed_at - t).count() / static_cast<double>(1000000);
     if(dt > 50) {
-        std::lock_guard<std::mutex> (*sig_m);
+        std::lock_guard<std::mutex> m(*sig_m);
         *btn = 0;
         return true;
     }
