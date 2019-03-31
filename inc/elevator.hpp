@@ -5,7 +5,6 @@
 #include <mutex>
 #include <array>
 
-#include <signals.hpp>
 #include <commands.hpp>
 
 #include <sys/time.h>

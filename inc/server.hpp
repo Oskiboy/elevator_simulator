@@ -9,7 +9,6 @@
 
 #include <elevator.hpp>
 #include <logger.hpp>
-#include <signals.hpp>
 #include <commands.hpp>
 
 #include <sys/socket.h>
