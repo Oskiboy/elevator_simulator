@@ -16,10 +16,10 @@ def main(args):
         s.connect((args.ip, args.port))
         s.sendall(b)
         data = s.recv(4)
-        print(data)
+        print("Response:", struct.unpack("4b",data))
         if args.msg[0] == 255:
             data = s.recv(8)
-            print(struct.unpack('d',data))
+            print("Position: {0}".format(struct.unpack('d',data)[0]))
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-i", "--ip", default="localhost", help="Ip address to the server")
