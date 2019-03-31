@@ -22,11 +22,13 @@ class Elevator;
 class ElevServer {
     public:
         ElevServer(int port, int num_of_elevators, std::string log_file);
-        ~ElevServer();
+        //~ElevServer();
 
         void    run(void);
         bool    ok(void);
         void    stop(void);
+        double  getPosition(int id);
+        void    elevControl(char msg[4]);
         
     private:
         void        initSocket();
@@ -39,7 +41,7 @@ class ElevServer {
         char*       handleMessage(const char msg[4]);
         command_t   parseMessage(const char msg[4]);
         command_t   executeCommand(const command_t &cmd);
-        char*       createResponse(command_t cmd);
+        char*       createResponse(const command_t &cmd);
         
         void runThreads();
         void joinThreads();

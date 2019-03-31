@@ -15,10 +15,11 @@ def main(args):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.connect((args.ip, args.port))
         s.sendall(b)
-        data = s.recv(40)
-        print(data[:4])
+        data = s.recv(4)
+        print(data)
         if args.msg[0] == 255:
-            print(struct.unpack_from('d',data, 4))
+            data = s.recv(8)
+            print(struct.unpack('d',data))
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-i", "--ip", default="localhost", help="Ip address to the server")

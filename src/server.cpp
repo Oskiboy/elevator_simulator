@@ -23,11 +23,11 @@ logger(log_file), running(false), port_num(port)
     runThreads();
     logger.info("Elevators running!");
 }
-
+/*
 ElevServer::~ElevServer() {
     disconnectSocket();
 }
-
+*/
 void ElevServer::run(void) {
     ok_mtx.lock();
     running = true;
@@ -64,6 +64,12 @@ bool ElevServer::ok(void) {
 void ElevServer::stop(void) {
     std::lock_guard<std::mutex> lock(ok_mtx);
     running = false;
+}
+
+void ElevServer::elevControl(char msg[4]) {
+    command_t cmd = parseMessage(msg);
+    command_t ret = executeCommand(cmd);
+    std::cout << ret << std::endl;
 }
 
 void ElevServer::runThreads() {
@@ -181,14 +187,19 @@ void ElevServer::handleConnections() {
     char *response = handleMessage(buffer);
     
     //If the command type is more than five the connection expects an answer.
-    if(buffer[0] > 5) {
+    if(buffer[0] > 5 && buffer[0] != -1) {
         ret = write(conn_fd, response, 4*sizeof(char));
         if(ret < 0) {
             logger.error("Could not write to the connection");
             throw SocketWriteException();
         }
-    } else if(buffer[0] == 255) {
-        ret = write(conn_fd, buffer, 40 * sizeof(char));
+    } else if((unsigned char)buffer[0] == 255) {
+        ret = write(conn_fd, buffer, 4*sizeof(char));
+        if(ret < 0) {
+            logger.error("Could not write to the connection");
+            throw SocketWriteException();
+        }
+        ret = write(conn_fd, (double*)&response[4], sizeof(double));
         if(ret < 0) {
             logger.error("Could not write to the connection");
             throw SocketWriteException();
@@ -206,8 +217,8 @@ char* ElevServer::handleMessage(const char msg[4]) {
     return createResponse(ret);
 }
 
-char* ElevServer::createResponse(command_t cmd) {
-    static char response[40];
+char* ElevServer::createResponse(const command_t &cmd) {
+    static char response[4*sizeof(char) + sizeof(double)];
     bzero(&response, sizeof(response));
 
     if(cmd.cmd != CommandType::ERROR) {
@@ -222,8 +233,8 @@ char* ElevServer::createResponse(command_t cmd) {
         response[3] = 255;
     }
 
-    if(cmd.msg[0] == 255) {
-        response[4] = cmd.position;
+    if((unsigned char)cmd.msg[0] == 255) {
+        memcpy(&response[4], &cmd.position, sizeof(cmd.position));
     }
 
     return response;
@@ -242,10 +253,10 @@ command_t ElevServer::parseMessage(const char msg[4]) {
         .elevator_num = 0,
         .position   = 0,
         .msg = {
-            cmd.msg[0], 
-            cmd.msg[1], 
-            cmd.msg[2], 
-            cmd.msg[3]
+            msg[0], 
+            msg[1], 
+            msg[2], 
+            msg[3]
         }
     };
 
@@ -291,6 +302,7 @@ command_t ElevServer::parseMessage(const char msg[4]) {
             break;
         case 255:
             cmd.signal  = CommandSignal::POSITION;
+            cmd.cmd     = CommandType::GET;
             break;
         default:
             cmd.signal = CommandSignal::NUM_SIGNALS;
@@ -336,4 +348,10 @@ command_t ElevServer::executeCommand(const command_t &cmd) {
     return ret;
 }
 
-
+double ElevServer::getPosition(int id) {
+    for(auto e: elevators) {
+        if(e->getId() == id)
+            return e->getElevatorPosition(); 
+    }
+    return 0;
+}
