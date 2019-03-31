@@ -14,73 +14,47 @@
 ElevServer::ElevServer(int port, int num_of_elevators, std::string log_file):
 logger(log_file), running(false), port_num(port)  
 {
-    ElevServer::stop();
-    //Creating a new TCP socket.
-    server_fd = socket(AF_INET, SOCK_STREAM, 0);
-    if(server_fd < 0) {
-        logger.error("Could not create socket");
-        throw SocketCreateException();
-    }
-    logger.info("Socket created");
+    initSocket();
 
     for(int i = 0; i < num_of_elevators; ++i) {
         elevators.push_back(std::make_shared<elev::Elevator>(i)); 
     }
-
-    runThreads();
-    
     logger.info("Elevators set up");
-
-    memset(&serv_addr, 0, sizeof(serv_addr));
-    memset(&cli_addr, 0, sizeof(cli_addr));
-
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(port_num);
-    serv_addr.sin_addr.s_addr = INADDR_ANY;
+    runThreads();
+    logger.info("Elevators running!");
 }
 
 ElevServer::~ElevServer() {
-    close(server_fd);
-    close(conn_fd);
+    disconnectSocket();
 }
 
 void ElevServer::run(void) {
+    ok_mtx.lock();
     running = true;
-    int ret;
-    
-    ret = bind(server_fd, (struct sockaddr*) &serv_addr, sizeof(serv_addr));
-    if(ret < 0) {
-        logger.error("Could not bind the socket");
-        throw SocketBindException();
-    }
-    logger.info("Socket bound to port " + std::to_string(port_num));
-    
-    listen(server_fd, 5);
-    logger.info("Socket now listening");
-    
+    ok_mtx.unlock();
+
+    connectSocket();
     
     while(ok()) {
-        handleConnection();
+        handleConnections();
     }
 
-    for(auto e: elevators) {
-        e->stop();
-    }
+    stopElevators();
     logger.info("All elevators stopped");
 
     joinThreads();
     logger.info("All threads joined.");
 
-    ret = close(server_fd);
-    if(ret < 0) {
-        logger.error("Could not close server socket! ERROR CODE: " + std::to_string(ret));
-    }
-    ret = close(conn_fd);
-    if(ret < 0) {
-        logger.error("Could not close client socket! ERROR CODE: " + std::to_string(ret));
-    }
+    disconnectSocket();
     logger.info("All sockets closed");
 }
+
+void ElevServer::stopElevators() {
+    for(auto e: elevators) {
+        e->stop();
+    }
+}
+
 
 bool ElevServer::ok(void) {
     std::lock_guard<std::mutex> lock(ok_mtx);
@@ -112,21 +86,64 @@ void ElevServer::joinThreads() {
     }
 }
 
+void ElevServer::initSocket() {
+    //Creating a new TCP socket.
+    server_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if(server_fd < 0) {
+        logger.error("Could not create socket");
+        throw SocketCreateException();
+    }
+    logger.info("Socket created");
+    memset(&serv_addr, 0, sizeof(serv_addr));
+    memset(&cli_addr, 0, sizeof(cli_addr));
 
-void ElevServer::handleConnection() {
-    conn_mtx.lock();
-    int ret;
-    cli_len = sizeof(cli_addr);
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(port_num);
+    serv_addr.sin_addr.s_addr = INADDR_ANY;
 
+}
+
+void ElevServer::connectSocket() {
+    int ret = 0;  
+    ret = bind(server_fd, (struct sockaddr*) &serv_addr, sizeof(serv_addr));
+    if(ret < 0) {
+        logger.error("Could not bind the socket");
+        throw SocketBindException();
+    }
+    logger.info("Socket bound to port " + std::to_string(port_num));
+    listen(server_fd, 5);
+    logger.info("Socket now listening");
+}
+
+void ElevServer::disconnectSocket() {
+    int ret = close(server_fd);
+    if(ret < 0) {
+        logger.error("Could not close server socket! ERROR CODE: " + std::to_string(ret));
+    }
+    ret = close(conn_fd);
+    if(ret < 0) {
+        logger.error("Could not close client socket! ERROR CODE: " + std::to_string(ret));
+    }
+}
+
+int ElevServer::selectSocket() {
+    //Set up a timeout and check for active socket connections.
     fd_set fdread;
     struct timeval tv;
 
-    tv.tv_sec=0;
-    tv.tv_usec=500000;
+    tv.tv_sec = 0;
+    tv.tv_usec= 500000;
 
     FD_ZERO(&fdread);
     FD_SET(server_fd, &fdread);
-    int select_status = select(server_fd + 1, &fdread, 0, 0, &tv);
+    return select(server_fd + 1, &fdread, 0, 0, &tv);
+}
+
+void ElevServer::handleConnections() {
+    conn_mtx.lock();
+    int ret;
+    
+    int select_status = selectSocket();
 
     if(select_status < 0) {
         logger.error("Select error");
@@ -136,44 +153,42 @@ void ElevServer::handleConnection() {
         return;
     }
 
+    //If there is an active connection, accept it.
+    cli_len = sizeof(cli_addr);
     conn_fd = accept(server_fd, (struct sockaddr*) &cli_addr, &cli_len);
-    logger.info("New connection!");
-
     if(conn_fd < 0) {
         logger.error("Could not accept connection");
         throw SocketAcceptException();
     }
 
+    //Initialize and zero out a buffer for reading from the socket
     char buffer[4];
     bzero(&buffer, 4);
-
+    //Read the 4 bytes from the socket
     ret = read(conn_fd, buffer, 4 * sizeof(buffer[0]));
     if(ret < 0) {
         logger.error("Could not read from the new connection");
         throw SocketReadException();
     }
-    std::string msg = "";
+
+    std::string msg = "[";
     for(int i = 0; i < 4; ++i) {
         msg += std::to_string(buffer[i]) + " ";
     }
-    logger.info("New message received: " + msg);
+    logger.info("New message received: " + msg + "]");
 
+    //Handle the received message.
     char *response = handleMessage(buffer);
-    /*
-    std::cout <<"Response:" << std::endl;
-    for(int i = 0; i < 4; ++i) {
-        std::cout << (int)response[i] << ",";
-    }
-    std::cout << std::endl;
-    */
+    
+    //If the command type is more than five the connection expects an answer.
     if(buffer[0] > 5) {
         ret = write(conn_fd, response, 4*sizeof(char));
+        if(ret < 0) {
+            logger.error("Could not write to the connection");
+            throw SocketWriteException();
+        }
     }
 
-    if(ret < 0) {
-        logger.error("Could not write to the connection");
-        throw SocketWriteException();
-    }
     close(conn_fd);
     conn_mtx.unlock();
 }
@@ -181,52 +196,60 @@ void ElevServer::handleConnection() {
 char* ElevServer::handleMessage(const char msg[4]) {
     command_t cmd;
     cmd = parseMessage(msg);
-    //std::cout << "From parser:\n" << cmd;
     command_t ret = executeCommand(cmd);
-    //std::cout << "From elevator:\n" << ret;
     return createResponse(ret);
 }
 
 char* ElevServer::createResponse(command_t cmd) {
-    //std::cout << cmd.value << " " << cmd.floor << " " << cmd.msg << std::endl;
-    static char response[4] = {0, 0, 0, 0};
+    static char response[4];
+    bzero(&response, sizeof(response));
+
     if(cmd.cmd != CommandType::ERROR) {
         response[0] = cmd.msg[0];
         response[1] = cmd.value;
         response[2] = cmd.floor;
         response[3] = cmd.msg[3];
     } else {
-        response[0] = -1;
+        response[0] = 255;
+        response[1] = 255;
+        response[2] = 255;
+        response[3] = 255;
     }
+
     return response;
 }
 
 command_t ElevServer::parseMessage(const char msg[4]) {
-    /*
-    Message format:
-        elevator_id <value, default 0> get/set command <which_instance> <data> 
-    */
     //TODO: This needs some cleanup and/or a neater solution
-    command_t cmd{CommandType::ERROR, CommandSignal::NUM_SIGNALS, 0,0,0,0,0};
-    for(int i = 0; i < 4; ++i) {
-        cmd.msg[i] = msg[i];    
-    }
-    cmd.cmd =       ((msg[0] > 5) ? CommandType::GET : CommandType::SET);
-    cmd.floor =     msg[2];
-    cmd.value =     msg[3];
-    cmd.selector =  msg[2];
-    cmd.elevator_num = 0;
+
+    //Zero initialize a new command
+    command_t cmd { 
+        .cmd        = (msg[0] > 5) ? CommandType::GET : CommandType::SET,
+        .signal     = CommandSignal::NUM_SIGNALS,
+        .selector   = msg[2],
+        .floor      = msg[2],
+        .value      = msg[3],
+        .elevator_num = 0,
+        .position   = 0,
+        .msg = {
+            cmd.msg[0], 
+            cmd.msg[1], 
+            cmd.msg[2], 
+            cmd.msg[3]
+        }
+    };
+
     switch (msg[0])
     {
         case 1:
-            cmd.signal = CommandSignal::MOTOR;
-            cmd.value = msg[1];
+            cmd.signal  = CommandSignal::MOTOR;
+            cmd.value   = msg[1];
             break;
         case 2:
-            cmd.signal = CommandSignal::BUTTON;
-            cmd.selector = msg[1];
-            cmd.floor = msg[2];
-            cmd.value = msg[3];
+            cmd.signal      = CommandSignal::BUTTON;
+            cmd.selector    = msg[1];
+            cmd.floor       = msg[2];
+            cmd.value       = msg[3];
             break;
         case 3:
             cmd.signal = CommandSignal::FLOOR_SENSOR;
@@ -238,10 +261,10 @@ command_t ElevServer::parseMessage(const char msg[4]) {
             cmd.signal = CommandSignal::STOP_LIGHT;
             break;
         case 6:
-            cmd.signal = CommandSignal::BUTTON;
-            cmd.selector = msg[1];
-            cmd.floor = msg[2];
-            cmd.value = msg[3];
+            cmd.signal      = CommandSignal::BUTTON;
+            cmd.selector    = msg[1];
+            cmd.floor       = msg[2];
+            cmd.value       = msg[3];
             break;
         case 7:
             cmd.signal = CommandSignal::FLOOR_SENSOR;
@@ -258,30 +281,41 @@ command_t ElevServer::parseMessage(const char msg[4]) {
             break;
     }
 
-
     return cmd;
 }
 
 command_t ElevServer::executeCommand(const command_t &cmd) {
     std::shared_ptr<elev::Elevator> e_ptr;
-    command_t ret{CommandType::ERROR, CommandSignal::NUM_SIGNALS, 0,0,0,0,0};
-    for(int i = 0; i < 4; ++i) {
-        ret.msg[i] = cmd.msg[i];    
-    }
+    command_t ret {  
+        .cmd            = CommandType::ERROR, 
+        .signal         = CommandSignal::NUM_SIGNALS,
+        .selector       = 0,
+        .floor          = 0,
+        .value          = 0,
+        .elevator_num   = 0,
+        .position       = 0,
+        .msg = {
+            cmd.msg[0], 
+            cmd.msg[1], 
+            cmd.msg[2], 
+            cmd.msg[3]
+        }
+    };
+
     //Select the appropriate elevator.
     for(auto e: elevators) { 
         if(e->getId() == cmd.elevator_num) {
             e_ptr = e;
         }
     }
-    //If the command type is valid, run it on the elevator.
+
+    //If the command type is valid, run command on the elevator.
     if(cmd.cmd == CommandType::ERROR) {
         logger.error("Malformed command received");
         ret.cmd = CommandType::ERROR;
     } else {
         ret = e_ptr->executeCommand(cmd);
     }
-    //std::cout << "Return from elevator\n" << ret;
 
     return ret;
 }

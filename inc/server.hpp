@@ -29,8 +29,12 @@ class ElevServer {
         void    stop(void);
         
     private:
-        void        disconnect();
-        void        handleConnection();
+        void        initSocket();
+        void        connectSocket();
+        int         selectSocket();
+        void        disconnectSocket();
+        void        stopElevators();
+        void        handleConnections();
         char*       handleMessage(const char msg[4]);
         command_t   parseMessage(const char msg[4]);
         command_t   executeCommand(const command_t &cmd);

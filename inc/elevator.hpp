@@ -53,15 +53,8 @@ class Elevator {
         bool    ok();
         void    stop();
         int     getId(void);
-        
-        //Motor controller functions
-        void    setMotorDirection(Direction new_dir);
-        void    startMotor(void);
-        void    stopMotor(void);
 
-        //All signals
-        //int setSignal(Signals sig, int value);
-        //int getSignal(Signals sig);
+        //Primary communication interface
         command_t executeCommand(const command_t &cmd);
 
         double  getElevatorPosition(void);
@@ -76,6 +69,8 @@ class Elevator {
 
     private:
         const int _id;
+        int         _num_floors;
+
         std::mutex sig_m, ok_mtx;
         bool running;
 
@@ -83,10 +78,9 @@ class Elevator {
         ElevatorSignals_t signals;
 
         //Motor stuff
-        double      pos;
-        double      _motor_speed;
         Direction   _last_dir;
-        int         _num_floors;
+
+        //Timestamps
         double      dt;
         std::chrono::time_point<std::chrono::system_clock> timestamp, t;
 };

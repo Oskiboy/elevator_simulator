@@ -9,15 +9,15 @@
 using namespace elev;
 
 Elevator::Elevator(int id, int num_floors):
-        _id(id), 
-        pos(0.1), 
-        _motor_speed(TRACK_LENGTH / TRACK_TIME),
+        _id(id),  
         _num_floors(num_floors)
 {
+    std::lock_guard<std::mutex> lock(sig_m);
     signals.buttons = std::unique_ptr<int[][3]>(new int[_num_floors][3]);
     signals.lights = std::unique_ptr<int[]>(new int[_num_floors]);
     nullSignals();
-    signals.motor.speed = _motor_speed;
+    signals.motor.speed = TRACK_LENGTH / TRACK_TIME;
+    signals.position = 0.1;
     timestamp = std::chrono::system_clock::now();
 }
 
@@ -28,24 +28,19 @@ void Elevator::nullSignals() {
         signals.buttons[i][2] = 0;
         signals.lights[i] = 0;
     }
-
     signals.obstruction = 0;
-    
     signals.stop = 0;
-    
     signals.floor_sensor = -1;
-    
     signals.position = 0;
-
     signals.motor.direction = Direction::STOP;
     signals.motor.speed = 0;
-
 }
 
 Elevator::Elevator(int id, double motor_speed, int num_floors):
 Elevator(id, num_floors)
 {
-    _motor_speed = motor_speed;
+    std::lock_guard<std::mutex> lock(sig_m);
+    signals.motor.speed = motor_speed;
 }
 
 Elevator::~Elevator() {
@@ -90,7 +85,6 @@ void Elevator::update(void) {
 
 
 void Elevator::updatePosition(void) {
-    
     signals.position += static_cast<int>(signals.motor.direction) * signals.motor.speed * dt;
 
     //Be careful to check for boundry conditions.
@@ -100,7 +94,6 @@ void Elevator::updatePosition(void) {
     if(signals.position < 0) {
         signals.position = 0;
     }
-    std::cout << "Position: " << signals.position << std::endl;
 }
 
 
@@ -116,7 +109,7 @@ void Elevator::updateSignals(void) {
     //Iterate over all floors and update the floor indicator
     //if the elevator is close enough to a floor. 
     for(int i = 0; i < 4; ++i) {
-        if(std::abs(pos - (i * TRACK_LENGTH / 3.0)) < 0.01) {
+        if(std::abs(signals.position - (i * TRACK_LENGTH / 3.0)) < 0.01) {
             
             signals.floor_sensor = i + 1;
     
@@ -134,22 +127,6 @@ int Elevator::getId(void) {
     return _id;
 }
 
-
-void Elevator::setMotorDirection(Direction d) {
-    std::lock_guard<std::mutex> lock(sig_m);
-    signals.motor.direction = d;
-}
-
-void Elevator::startMotor(void) {
-    std::lock_guard<std::mutex>lock(sig_m);
-    signals.motor.direction = _last_dir;
-}
-
-void Elevator::stopMotor(void) {
-    std::lock_guard<std::mutex>lock(sig_m);
-    _last_dir = signals.motor.direction;
-    signals.motor.direction = Direction::STOP;
-}
 
 int Elevator::getSignal(const command_t &cmd) {
     std::lock_guard<std::mutex>lock(sig_m);
@@ -209,10 +186,13 @@ command_t Elevator::executeCommand(const command_t &cmd) {
     } else {
         setSignal(cmd);
     }
+    sig_m.lock();
+    ret.position = signals.position;
+    sig_m.unlock();
     return ret;
 }
 
 double Elevator::getElevatorPosition(void) {
     std::lock_guard<std::mutex>lock(sig_m);
-    return pos;
+    return signals.position;
 }
