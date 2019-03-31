@@ -21,51 +21,18 @@ This will open a little terminal with little to no functionality, but to shut th
 ## Command set
 
 ```bash
-python socket_server.py [id <integer>] get/set cmd <value>
-#Available commands:
-    BUTTON_COMMAND_1,
-    BUTTON_COMMAND_2,
-    BUTTON_COMMAND_3,
-    BUTTON_COMMAND_4,
-    BUTTON_UP_1,
-    BUTTON_UP_2,
-    BUTTON_UP_3,
-    BUTTON_DOWN_2,
-    BUTTON_DOWN_3,
-    BUTTON_DOWN_4,
-    STOP_BUTTON,
-    OBSTRUCTION,
-    FLOOR_SENSOR,
-    LIGHT_STOP,
-    LIGHT_COMMAND_1,
-    LIGHT_COMMAND_2,
-    LIGHT_COMMAND_3,
-    LIGHT_COMMAND_4,
-    LIGHT_UP_1,
-    LIGHT_UP_2,
-    LIGHT_UP_3,
-    LIGHT_DOWN_2,
-    LIGHT_DOWN_3,
-    LIGHT_DOWN_4,
-    LIGHT_FLOOR_1,
-    LIGHT_FLOOR_2,
-    LIGHT_FLOOR_3,
-    LIGHT_FLOOR_4,
-    MOTOR_DIR,
-    MOTOR_SPEED
+python socket_server.py -p <port> [cmd]
 ```
 
 Example:
 
 ```bash
-python socket_server.py get STOP_BUTTON
+python socket_server.py 1 1 0 0
 ```
 
-For use in code send TCP socket messages as: "get STOP_BUTTON" or "set LIGHT_STOP 1"
+For use in code send TCP socket messages send four bytes with the command.
 
-## New commands set
-
-To make this command set correspond with a different simulator I am going to adopt this command set:
+## Command set:
 
 <table>
     <tbody>
