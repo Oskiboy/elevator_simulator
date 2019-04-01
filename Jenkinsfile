@@ -34,6 +34,7 @@ pipeline {
             sh '''
             echo "Build passed!"
             '''
+            archiveArtifacts: "build/sim_server"
         }
         failure {
             sh '''
@@ -41,7 +42,7 @@ pipeline {
             '''
         }
         always {
-            archiveArtifacts artifacts: "logs/*.log, build/sim_server"
+            archiveArtifacts artifacts: "logs/*.log"
             sh '''
             ls
             echo "Starting clean"
