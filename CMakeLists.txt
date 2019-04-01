@@ -10,8 +10,15 @@ add_library(server_lib "src/server.cpp")
 add_library(elev_lib "src/elevator.cpp")
 add_library(command_lib "src/commands.cpp")
 add_library(button_press_lib "src/button_press.cpp")
+add_library(commander "src/server_commander.cpp")
 
-target_link_libraries(server_lib logger_lib pthread command_lib)
 target_link_libraries(elev_lib command_lib button_press_lib)
+target_link_libraries(server_lib logger_lib pthread command_lib elev_lib)
+
+target_link_libraries(commander server_lib)
+
 add_executable(sim_server "src/main.cpp")
 target_link_libraries(sim_server logger_lib server_lib elev_lib)
+
+add_executable(server_terminal "src/commander_main.cpp")
+target_link_libraries(server_terminal commander)
