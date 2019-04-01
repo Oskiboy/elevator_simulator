@@ -79,7 +79,7 @@ void ElevServer::runThreads() {
         msg += std::to_string(e->getId());
         logger.info(msg);
 
-        thread_pool.push_back(std::thread(&elev::Elevator::run, e.get()));
+        thread_pool.emplace_back(&elev::Elevator::run, e.get());
         logger.info("New thread started");
     }
 }

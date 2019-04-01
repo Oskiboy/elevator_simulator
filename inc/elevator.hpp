@@ -5,6 +5,7 @@
 #include <mutex>
 #include <array>
 #include <vector>
+#include <atomic>
 
 #include <commands.hpp>
 #include <button_press.hpp>
@@ -22,24 +23,24 @@ enum class Direction {
     DOWN    = -1
 };
 
-typedef std::unique_ptr<int[][3]> button_t;
-typedef std::unique_ptr<int[]>    light_t;
+typedef std::unique_ptr<std::atomic<int>[][3]> button_t;
+typedef std::unique_ptr<std::atomic<int>[]>    light_t;
 
 typedef struct {
-    double      speed;
-    Direction   direction;
+    std::atomic<double> speed;
+    Direction           direction;
 } motor_t;
 
 typedef struct {
     button_t    buttons;
     light_t     lights;
-    int         obstruction;
-    int         door_light;
-    int         stop;
-    int         stop_light;
-    int         floor_sensor;
+    std::atomic<int> obstruction;
+    std::atomic<int>         door_light;
+    std::atomic<int>         stop;
+    std::atomic<int>         stop_light;
+    std::atomic<int>         floor_sensor;
     motor_t     motor;
-    double      position;
+    std::atomic<double>      position;
 } ElevatorSignals_t;
 
 typedef std::chrono::time_point<std::chrono::system_clock> sysclk_t;
@@ -75,7 +76,7 @@ class Elevator {
         int         _num_floors;
 
         std::mutex  sig_m, ok_mtx;
-        bool        running;
+        std::atomic<bool> running;
 
         //Signals
         ElevatorSignals_t signals;
@@ -85,7 +86,7 @@ class Elevator {
         Direction   _last_dir;
 
         //Timestamps
-        double      dt;
+        std::atomic<double> dt;
         sysclk_t    timestamp, t;
 };
 } //namespace elev

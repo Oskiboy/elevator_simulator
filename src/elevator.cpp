@@ -14,8 +14,8 @@ Elevator::Elevator(int id, int num_floors):
         _num_floors(num_floors)
 {
     std::lock_guard<std::mutex> lock(sig_m);
-    signals.buttons = std::unique_ptr<int[][3]>(new int[_num_floors][3]);
-    signals.lights = std::unique_ptr<int[]>(new int[_num_floors]);
+    signals.buttons = std::unique_ptr<std::atomic<int>[][3]>(new std::atomic<int>[_num_floors][3]);
+    signals.lights = std::unique_ptr<std::atomic<int>[]>(new std::atomic<int>[_num_floors]);
     nullSignals();
     signals.motor.speed = TRACK_LENGTH / TRACK_TIME;
     signals.position = 0.1;
@@ -86,8 +86,8 @@ void Elevator::update(void) {
 
 
 void Elevator::updatePosition(void) {
-    signals.position += static_cast<int>(signals.motor.direction) * signals.motor.speed * dt;
-
+    double new_pos = static_cast<int>(signals.motor.direction) * signals.motor.speed * dt;
+    signals.position = new_pos;
     //Be careful to check for boundry conditions.
     if(signals.position > TRACK_LENGTH) {
         signals.position = TRACK_LENGTH;
@@ -164,10 +164,10 @@ void Elevator::setSignal(const command_t &cmd) {
     std::lock_guard<std::mutex>lock(sig_m);
     switch(cmd.signal) {
         case CommandSignal::BUTTON:
-            events.push_back(
-                ButtonPress(std::chrono::system_clock::now(),
-                        &signals.buttons[cmd.floor][cmd.selector],
-                        &sig_m)
+            events.emplace_back(
+                std::chrono::system_clock::now(),
+                &signals.buttons[cmd.floor][cmd.selector],
+                &sig_m
             );
             break;
         case CommandSignal::LIGHT:

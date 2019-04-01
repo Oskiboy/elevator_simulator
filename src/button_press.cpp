@@ -1,7 +1,7 @@
 #include "button_press.hpp"
 using namespace elev;
 
-ButtonPress::ButtonPress(sysclk_t time, int* btn, std::mutex* m):
+ButtonPress::ButtonPress(sysclk_t time, std::atomic<int>* btn, std::mutex* m):
 pressed_at(time), btn(btn), sig_m(m)
 {
     //Empty
