@@ -9,13 +9,12 @@ typedef std::chrono::time_point<std::chrono::system_clock> sysclk_t;
 
 class ButtonPress {
     public:
-        ButtonPress(sysclk_t time, std::atomic<int>* btn, std::mutex* m);
+        ButtonPress(sysclk_t time, std::atomic<int>* btn);
         ButtonPress() = delete;
         bool poll(void);
     private:
         sysclk_t pressed_at;
         std::atomic<int>* btn;
-        std::mutex* sig_m;
 };
 
 } //namespace elev

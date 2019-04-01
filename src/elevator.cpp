@@ -13,34 +13,18 @@ Elevator::Elevator(int id, int num_floors):
         _id(id),  
         _num_floors(num_floors)
 {
-    std::lock_guard<std::mutex> lock(sig_m);
-    signals.buttons = std::unique_ptr<std::atomic<int>[][3]>(new std::atomic<int>[_num_floors][3]);
-    signals.lights = std::unique_ptr<std::atomic<int>[]>(new std::atomic<int>[_num_floors]);
-    nullSignals();
+    signals.buttons = std::make_unique<std::atomic<int>[][3]>(_num_floors);
+    signals.lights = std::make_unique<std::atomic<int>[]>(_num_floors);
     signals.motor.speed = TRACK_LENGTH / TRACK_TIME;
     signals.position = 0.1;
+    signals.floor_sensor = -1;
     timestamp = std::chrono::system_clock::now();
 }
 
-void Elevator::nullSignals() {
-    for(int i = 0; i < _num_floors; ++i) {
-        signals.buttons[i][0] = 0;
-        signals.buttons[i][1] = 0;
-        signals.buttons[i][2] = 0;
-        signals.lights[i] = 0;
-    }
-    signals.obstruction = 0;
-    signals.stop = 0;
-    signals.floor_sensor = -1;
-    signals.position = 0;
-    signals.motor.direction = Direction::STOP;
-    signals.motor.speed = 0;
-}
 
 Elevator::Elevator(int id, double motor_speed, int num_floors):
 Elevator(id, num_floors)
 {
-    std::lock_guard<std::mutex> lock(sig_m);
     signals.motor.speed = motor_speed;
 }
 
@@ -49,26 +33,20 @@ Elevator::~Elevator() {
 }
 
 void Elevator::run(void) {
-    ok_mtx.lock();
     running = true;
-    ok_mtx.unlock();
 
     while(ok()) {
-        sig_m.lock();
         update();
-        sig_m.unlock();
         //std::cout << signals.position << std::endl;
         usleep(20);
     }
 }
 
 bool Elevator::ok() {
-    std::lock_guard<std::mutex> lock(ok_mtx);
     return running;
 }
 
 void Elevator::stop() {
-    std::lock_guard<std::mutex> lock(ok_mtx);
     running = false;
 }
 
@@ -86,8 +64,8 @@ void Elevator::update(void) {
 
 
 void Elevator::updatePosition(void) {
-    double new_pos = static_cast<int>(signals.motor.direction) * signals.motor.speed * dt;
-    signals.position = new_pos;
+    double new_pos = signals.position + static_cast<int>(signals.motor.direction) * signals.motor.speed * dt;
+    signals.position.store(new_pos);
     //Be careful to check for boundry conditions.
     if(signals.position > TRACK_LENGTH) {
         signals.position = TRACK_LENGTH;
@@ -111,30 +89,24 @@ void Elevator::updateSignals(void) {
     //if the elevator is close enough to a floor. 
     for(int i = 0; i < 4; ++i) {
         if(std::abs(signals.position - (i * TRACK_LENGTH / 3.0)) < 0.01) {
-            
             signals.floor_sensor = i + 1;
-    
             break;
         } else {
-            
             signals.floor_sensor = -1;
-            
         }
     }
-    std::remove_if(events.begin(), events.end(), [=](ButtonPress b){
-        return b.poll();
-    }
+    std::remove_if(events.begin(), events.end(), [=](ButtonPress &b){
+            return b.poll();
+        }
     );
 }
 
 int Elevator::getId(void) {
-    std::lock_guard<std::mutex> lock(sig_m);
     return _id;
 }
 
 
 int Elevator::getSignal(const command_t &cmd) {
-    std::lock_guard<std::mutex>lock(sig_m);
     switch(cmd.signal) {
         case CommandSignal::BUTTON:
             return signals.buttons[cmd.floor][cmd.selector];
@@ -161,13 +133,11 @@ int Elevator::getSignal(const command_t &cmd) {
 }
 
 void Elevator::setSignal(const command_t &cmd) {
-    std::lock_guard<std::mutex>lock(sig_m);
     switch(cmd.signal) {
         case CommandSignal::BUTTON:
             events.emplace_back(
                 std::chrono::system_clock::now(),
-                &signals.buttons[cmd.floor][cmd.selector],
-                &sig_m
+                &signals.buttons[cmd.floor][cmd.selector]
             );
             break;
         case CommandSignal::LIGHT:
@@ -194,13 +164,10 @@ command_t Elevator::executeCommand(const command_t &cmd) {
     } else {
         setSignal(cmd);
     }
-    sig_m.lock();
     ret.position = signals.position;
-    sig_m.unlock();
     return ret;
 }
 
 double Elevator::getElevatorPosition(void) {
-    std::lock_guard<std::mutex>lock(sig_m);
     return signals.position;
 }

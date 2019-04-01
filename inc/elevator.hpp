@@ -66,16 +66,14 @@ class Elevator {
         void    updatePosition(void);
         void    updateSignals(void);
         void    updateTime(void);
-        void    nullSignals();
 
         int     getSignal(const command_t &cmd);
         void    setSignal(const command_t &cmd);
 
     private:
-        const int   _id;
-        int         _num_floors;
+        const std::atomic<int> _id;
+        int _num_floors;
 
-        std::mutex  sig_m, ok_mtx;
         std::atomic<bool> running;
 
         //Signals
@@ -83,11 +81,13 @@ class Elevator {
         std::vector<ButtonPress> events;
 
         //Motor stuff
-        Direction   _last_dir;
+        std::atomic<Direction>   _last_dir;
 
         //Timestamps
         std::atomic<double> dt;
         sysclk_t    timestamp, t;
 };
 } //namespace elev
+
 #endif //ELEVATOR_HPP
+

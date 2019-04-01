@@ -1,8 +1,8 @@
 #include "button_press.hpp"
 using namespace elev;
 
-ButtonPress::ButtonPress(sysclk_t time, std::atomic<int>* btn, std::mutex* m):
-pressed_at(time), btn(btn), sig_m(m)
+ButtonPress::ButtonPress(sysclk_t time, std::atomic<int>* btn):
+pressed_at(time), btn(btn)
 {
     //Empty
 }
@@ -12,7 +12,6 @@ bool ButtonPress::poll(void) {
     //dt is milliseconds
     auto dt = (pressed_at - t).count() / static_cast<double>(1000000);
     if(dt > 50) {
-        std::lock_guard<std::mutex> m(*sig_m);
         *btn = 0;
         return true;
     }
