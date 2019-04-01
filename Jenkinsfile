@@ -46,7 +46,6 @@ pipeline {
             sh '''
             ls
             echo "Starting clean"
-            make clean
             rm -rf build/ logs/
             '''
         }
