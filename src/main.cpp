@@ -8,6 +8,7 @@
 
 #include "elevator.hpp"
 #include "server.hpp"
+#include "utilities/arg_parse.hpp"
 
 std::atomic_bool running(true);
 
@@ -16,10 +17,12 @@ void sigHandler(int num) {
     std::cout << "Stopping server!" << std::endl;
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char* argv[]) {
     signal(SIGINT, sigHandler);
     signal(SIGABRT, sigHandler);
-
+    ArgParser parser(argc, argv);
+    parser.addArgument("-p", ArgOption::VALUE);
+    std::cout << parser.getArgs().at("-p") << std::endl;
     std::shared_ptr<ElevServer> e_ptr;
     std::thread server;
     std::cout << "Starting server..." << std::endl;
