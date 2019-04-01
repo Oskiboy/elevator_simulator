@@ -36,7 +36,7 @@ pipeline {
             '''
         }
         always {
-            archiveArtifacts artifacts: "logs/*.log, build/heis"
+            archiveArtifacts artifacts: "logs/*.log, build/sim_server"
             sh '''
             ls
             echo "Starting clean"
