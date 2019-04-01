@@ -16,6 +16,9 @@ pipeline {
                     EOF
                     '''
                 }
+                dir('build') {
+                    deleteDir()
+                }
 
             }
         }
@@ -44,9 +47,6 @@ pipeline {
         always {
             archiveArtifacts artifacts: "logs/*.log"
             sh '''
-            ls
-            echo "Starting clean"
-            rm -rf build/ logs/
             '''
         }
     }
