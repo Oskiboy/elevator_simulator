@@ -10,6 +10,11 @@ pipeline {
             steps {
                 dir('logs') {
                     deleteDir()
+                    sh '''
+                    cat >> build_logs.log <<EOF
+                    BUILD LOGS INITIALIZED!
+                    EOF
+                    '''
                 }
 
             }
@@ -18,7 +23,7 @@ pipeline {
             steps {
                 sh '''
                 echo "Starting build..."
-                ./build.sh
+                ./build.sh >> logs/build_logs.log
                 '''
                 sh 'echo "Build complete..."'
             }
