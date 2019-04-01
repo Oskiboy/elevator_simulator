@@ -34,7 +34,7 @@ pipeline {
             sh '''
             echo "Build passed!"
             '''
-            archiveArtifacts: "build/sim_server"
+            archiveArtifacts artifacts: "build/sim_server"
         }
         failure {
             sh '''
