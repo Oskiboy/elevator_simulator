@@ -31,13 +31,21 @@ pipeline {
                 sh 'echo "Build complete..."'
             }
         }
+        stage('Wrapper') {
+            steps {
+                sh '''
+                echo "Building wrapper"
+                ./build._wrapper.sh >> logs/build_logs.log
+                '''
+            }
+        }
     }
     post {
         success {
             sh '''
             echo "Build passed!"
             '''
-            archiveArtifacts artifacts: "build/sim_server"
+            archiveArtifacts artifacts: "build/sim_server libelev_wrapper.a"
         }
         failure {
             sh '''
