@@ -140,5 +140,38 @@ For use in code send TCP socket messages send four bytes with the command.
         <tr>
             <td colspan="0"><em>NF = Num floors. X = Don't care.</em></td>
         </tr>
+        <tr>
+            <td><strong>System Commands</strong></td>
+            <td align="center" colspan="4">Instruction</td>
+            <td></td>
+            <td align="center" colspan="4">Output</td>
+        </tr>
+        <tr>
+            <td><em>Push button</em></td>
+            <td>&nbsp;&nbsp;10&nbsp;&nbsp;</td>
+            <td>type[0,1,2]</td>
+            <td>floor[0..NF]</td>
+            <td>X</td>
+            <td align="right"><em>Returns:</em></td>
+            <td>9</td>
+            <td>active<br>[0,1]</td>
+            <td>0</td>
+            <td>0</td>
+        </tr>
+        <tr>
+            <td><em>Get position</em></td>
+            <td>&nbsp;&nbsp;255&nbsp;&nbsp;</td>
+            <td>X</td>
+            <td>X</td>
+            <td>X</td>
+            <td align="right"><em>Returns:</em></td>
+            <td>9</td>
+            <td>active<br>[0,1]</td>
+            <td>0</td>
+            <td>0</td>
+        </tr>
+        <tr>
+            <td colspan="0"><em>After the 4 bytes, read one double as well to get position.</em></td>
+        </tr>
     </tbody>
 </table>
