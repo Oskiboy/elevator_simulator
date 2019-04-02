@@ -35,7 +35,7 @@ pipeline {
             steps {
                 sh '''
                 echo "Building wrapper"
-                ./build._wrapper.sh >> logs/build_logs.log
+                ./build_wrapper.sh >> logs/build_logs.log
                 '''
             }
         }
