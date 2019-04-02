@@ -11,7 +11,7 @@ pipeline {
                 dir('logs') {
                     deleteDir()
                     sh '''
-                    cat >> build_logs.log <<EOF
+                    cat >> build_logs.log <<-EOF
                     BUILD LOGS INITIALIZED!
                     EOF
                     '''
