@@ -113,7 +113,11 @@ void ElevServer::connectSocket() {
     int ret = 0;  
     ret = bind(server_fd, (struct sockaddr*) &serv_addr, sizeof(serv_addr));
     if(ret < 0) {
-        logger.error("Could not bind the socket");
+        if(errno == EADDRINUSE) {
+            logger.error("Could not bind the socket, socket already in use. Probably TIME_WAIT");
+            throw SocketBindException();
+        }
+        logger.error("Could not bind the socket: " + std::to_string(errno));
         throw SocketBindException();
     }
     logger.info("Socket bound to port " + std::to_string(port_num));
