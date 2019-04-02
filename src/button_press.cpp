@@ -11,10 +11,11 @@ pressed_at(time), btn(btn), duration(duration)
 bool ButtonPress::poll(void) {
     auto t = std::chrono::system_clock::now();
     //dt is milliseconds
-    auto dt = std::chrono::nanoseconds((pressed_at - t).count());
+    std::chrono::duration<double> dt = t - pressed_at;
     if(dt > duration) {
         *btn = 0;
         return true;
     }
+    *btn = 1;
     return false;
 }

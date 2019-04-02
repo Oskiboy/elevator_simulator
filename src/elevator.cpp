@@ -95,10 +95,14 @@ void Elevator::updateSignals(void) {
             signals.floor_sensor = -1;
         }
     }
-    std::remove_if(events.begin(), events.end(), [=](ButtonPress &b){
-            return b.poll();
+    for(auto it = events.begin(); it != events.end();) {
+        if(it->poll()) {
+            it = events.erase(it);
+            std::cout << events.size() << std::endl;
+        } else {
+            it++;
         }
-    );
+    }
 }
 
 int Elevator::getId(void) {
@@ -139,19 +143,19 @@ void Elevator::setSignal(const command_t &cmd) {
                 events.emplace_back(
                     std::chrono::system_clock::now(),
                     &signals.stop,
-                    std::chrono::milliseconds(1000)
+                    std::chrono::milliseconds((unsigned char)cmd.value*10)
                 );
             } else if(cmd.selector == 4) {
                 events.emplace_back(
                     std::chrono::system_clock::now(),
                     &signals.obstruction,
-                    std::chrono::milliseconds(1000)
+                    std::chrono::milliseconds((unsigned char)cmd.value*10)
                 );
             } else {
                 events.emplace_back(
                     std::chrono::system_clock::now(),
                     &signals.buttons[cmd.floor][cmd.selector],
-                    std::chrono::milliseconds(100)
+                    std::chrono::milliseconds((unsigned char)cmd.value*10)
                 );
             }
             break;
