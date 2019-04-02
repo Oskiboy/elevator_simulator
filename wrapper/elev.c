@@ -24,8 +24,7 @@ static int sockfd;
 static struct sockaddr_in servaddr;
 
 
-#ifdef TTK_SIM
-static int write_to_socket(char* cmd) {
+int write_to_socket(char* cmd) {
     send(sockfd, cmd, 4 * sizeof(cmd[0]), 0);
     if((int)cmd[0] > 5) {
         char buffer[4];
@@ -36,22 +35,7 @@ static int write_to_socket(char* cmd) {
     }
     return 0;
 }
-#else
-static int write_to_socket(char* cmd, int value) {
-    char buffer[256];
-    char str[50];
-    bzero(&buffer, sizeof(buffer));
-    strcpy(buffer, cmd);
-    strcat(buffer, " ");
-    sprintf(str, "%d", value);
-    strcat(buffer, str);
-    printf("%s", buffer);
-    send(sockfd, buffer, sizeof(buffer), 0);
-    bzero(&buffer, sizeof(buffer));
-    read(sockfd, buffer, sizeof(buffer));
-    return atoi(buffer);
-}
-#endif
+
 
 int elev_init(void) {
 
@@ -77,84 +61,41 @@ int elev_init(void) {
 }
 
 void elev_set_motor_direction(elev_motor_direction_t dirn) {
-    #ifdef TTK_SIM
     char cmd[4] = {1, dirn, 0, 0};
     write_to_socket(cmd);
-    #else
-    write_to_socket("set MOTOR_DIR", (int)dirn);
-    #endif
 }
 
 void elev_set_door_open_lamp(int value) {
-    #ifdef TTK_SIM
     char cmd[4] = {4 , value, 0, 0};
     write_to_socket(cmd);
-    #else
-    write_to_socket("set DOOR_LAMP", value);
-    #endif
 }
 
 int elev_get_obstruction_signal(void) {
-    #ifdef TTK_SIM
     char cmd[4] = {9, 0, 0, 0};
     return write_to_socket(cmd);
-    #else
-    return write_to_socket("get OBSTRUCTION", 0);
-    #endif
 }
 
 int elev_get_stop_signal(void) {
-    #ifdef TTK_SIM
     char cmd[4] = {8, 0, 0, 0};
     return write_to_socket(cmd);
-    #else
-    return write_to_socket("get STOP_BUTTON", 0);
-    #endif
 }
 
 void elev_set_stop_lamp(int value) {
-    #ifdef TTK_SIM
     char cmd[4] = {5, value, 0, 0};
     write_to_socket(cmd);
-    #else
-    write_to_socket("set LIGHT_STOP", value);
-    #endif
 }
 
 int elev_get_floor_sensor_signal(void) {  
-    #ifdef TTK_SIM
     char cmd[4] = {7, 0, 0, 0};
     return write_to_socket(cmd);
-    #else  
-    return write_to_socket("get FLOOR_SENSOR", 0);
-    #endif
+
 }
 
 void elev_set_floor_indicator(int floor) {
     assert(floor >= 0);
     assert(floor < N_FLOORS);
-    #ifdef TTK_SIM
     char cmd[4] = {3, floor, 0, 0};
     write_to_socket(cmd);
-    #else
-    switch (floor)
-    {
-        case 1:
-            write_to_socket("set LIGHT_FLOOR_1", 1);
-            break;
-        case 2:
-            write_to_socket("set LIGHT_FLOOR_2", 1);
-            break;
-        case 3:
-            write_to_socket("set LIGHT_FLOOR_3", 1);
-            break;
-        case 4:
-            write_to_socket("set LIGHT_FLOOR_3", 1);
-            break;
-        default:
-            break;
-    }
-    #endif
 }
 
 int elev_get_button_signal(elev_button_type_t button, int floor) {
@@ -163,71 +104,8 @@ int elev_get_button_signal(elev_button_type_t button, int floor) {
     assert(!(button == BUTTON_CALL_UP && floor == N_FLOORS - 1));
     assert(!(button == BUTTON_CALL_DOWN && floor == 0));
     assert(button == BUTTON_CALL_UP || button == BUTTON_CALL_DOWN || button == BUTTON_COMMAND);
-    #ifdef TTK_SIM
     char cmd[4] = {6, button, floor, 0};
     return write_to_socket(cmd);
-    #else
-    switch (button)
-    {
-        case BUTTON_CALL_UP:
-            switch (floor)
-            {
-                case 1:
-                    return write_to_socket("get BUTTON_UP_1", 0);
-                    break;
-                case 2:
-                    return write_to_socket("get BUTTON_UP_2", 0);
-                    break;
-                case 3:
-                    return write_to_socket("get BUTTON_UP_3", 0);
-                    break;
-                default:
-                    return -1;
-                    break;
-            }
-            break;
-        case BUTTON_CALL_DOWN:
-            switch (floor)
-            {
-                case 2:
-                    return write_to_socket("get BUTTON_DOWN_2", 0);
-                    break;
-                case 3:
-                    return write_to_socket("get BUTTON_DOWN_3", 0);
-                    break;
-                case 4:
-                    return write_to_socket("get BUTTON_DOWN_4", 0);
-                    break;
-                default:
-                    return -1;
-                    break;
-            }
-            break;
-        case BUTTON_COMMAND:
-            switch (floor)
-            {
-                case 1:
-                    return write_to_socket("get BUTTON_COMMAND_1", 0);
-                    break;
-                case 2:
-                    return write_to_socket("get BUTTON_COMMAND_2", 0);
-                    break;
-                case 3:
-                    return write_to_socket("get BUTTON_COMMAND_3", 0);
-                    break;
-                case 4:
-                    return write_to_socket("get BUTTON_COMMAND_4", 0);
-                    break;
-                default:
-                    return -1;
-                    break;
-            }
-            break;
-        default:
-            break;
-    }
-    #endif
-
 }
 
 void elev_set_button_lamp(elev_button_type_t button, int floor, int value) {
@@ -236,67 +114,6 @@ void elev_set_button_lamp(elev_button_type_t button, int floor, int value) {
     assert(!(button == BUTTON_CALL_UP && floor == N_FLOORS - 1));
     assert(!(button == BUTTON_CALL_DOWN && floor == 0));
     assert(button == BUTTON_CALL_UP || button == BUTTON_CALL_DOWN || button == BUTTON_COMMAND);
-    #ifdef TTK_SIM
     char cmd[4] = {2, button, floor, value};
     write_to_socket(cmd);
-    #else
-    switch (button)
-    {
-         case BUTTON_CALL_UP:
-            switch (floor)
-            {
-                case 1:
-                    write_to_socket("set BUTTON_UP_1", value);
-                    break;
-                case 2:
-                    write_to_socket("set BUTTON_UP_2", value);
-                    break;
-                case 3:
-                    write_to_socket("set BUTTON_UP_3", value);
-                    break;
-                default:
-                    break;
-            }
-            break;
-        case BUTTON_CALL_DOWN:
-            switch (floor)
-            {
-                case 2:
-                    write_to_socket("set BUTTON_DOWN_2", value);
-                    break;
-                case 3:
-                    write_to_socket("set BUTTON_DOWN_3", value);
-                    break;
-                case 4:
-                     write_to_socket("set BUTTON_DOWN_4", value);
-                    break;
-                default:
-                    
-                    break;
-            }
-            break;
-        case BUTTON_COMMAND:
-            switch (floor)
-            {
-                case 1:
-                     write_to_socket("set BUTTON_COMMAND_1", value);
-                    break;
-                case 2:
-                     write_to_socket("set BUTTON_COMMAND_2", value);
-                    break;
-                case 3:
-                     write_to_socket("set BUTTON_COMMAND_3", value);
-                    break;
-                case 4:
-                     write_to_socket("set BUTTON_COMMAND_4", value);
-                    break;
-                default:
-                    
-                    break;
-            }
-            break;
-        default:
-            break;
-    }
-    #endif
 }
