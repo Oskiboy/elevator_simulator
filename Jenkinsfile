@@ -45,7 +45,7 @@ pipeline {
             sh '''
             echo "Build passed!"
             '''
-            archiveArtifacts artifacts: "build/sim_server libelev_wrapper.a"
+            archiveArtifacts artifacts: "build/sim_server, libelev_wrapper.a"
         }
         failure {
             sh '''
