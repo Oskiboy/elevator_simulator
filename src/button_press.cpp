@@ -1,17 +1,18 @@
 #include "button_press.hpp"
 using namespace elev;
 
-ButtonPress::ButtonPress(sysclk_t time, std::atomic<int>* btn):
-pressed_at(time), btn(btn)
+ButtonPress::ButtonPress(sysclk_t time, std::atomic<int>* btn, msec_t duration):
+pressed_at(time), btn(btn), duration(duration)
 {
-    //Empty
+    //Presses the button
+    *btn = 1;
 }
 
 bool ButtonPress::poll(void) {
     auto t = std::chrono::system_clock::now();
     //dt is milliseconds
-    auto dt = (pressed_at - t).count() / static_cast<double>(1000000);
-    if(dt > 50) {
+    auto dt = std::chrono::nanoseconds((pressed_at - t).count());
+    if(dt > duration) {
         *btn = 0;
         return true;
     }

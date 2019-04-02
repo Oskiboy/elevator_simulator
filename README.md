@@ -149,14 +149,9 @@ For use in code send TCP socket messages send four bytes with the command.
         <tr>
             <td><em>Push button</em></td>
             <td>&nbsp;&nbsp;10&nbsp;&nbsp;</td>
-            <td>type[0,1,2]</td>
-            <td>floor[0..NF]</td>
+            <td>type<br>[0..4]</td>
+            <td>floor<br>[0..NF]</td>
             <td>X</td>
-            <td align="right"><em>Returns:</em></td>
-            <td>9</td>
-            <td>active<br>[0,1]</td>
-            <td>0</td>
-            <td>0</td>
         </tr>
         <tr>
             <td><em>Get position</em></td>
@@ -165,8 +160,8 @@ For use in code send TCP socket messages send four bytes with the command.
             <td>X</td>
             <td>X</td>
             <td align="right"><em>Returns:</em></td>
-            <td>9</td>
-            <td>active<br>[0,1]</td>
+            <td>255</td>
+            <td>0</td>
             <td>0</td>
             <td>0</td>
         </tr>

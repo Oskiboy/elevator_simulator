@@ -135,10 +135,25 @@ int Elevator::getSignal(const command_t &cmd) {
 void Elevator::setSignal(const command_t &cmd) {
     switch(cmd.signal) {
         case CommandSignal::BUTTON:
-            events.emplace_back(
-                std::chrono::system_clock::now(),
-                &signals.buttons[cmd.floor][cmd.selector]
-            );
+            if(cmd.selector == 3) {
+                events.emplace_back(
+                    std::chrono::system_clock::now(),
+                    &signals.stop,
+                    std::chrono::milliseconds(1000)
+                );
+            } else if(cmd.selector == 4) {
+                events.emplace_back(
+                    std::chrono::system_clock::now(),
+                    &signals.obstruction,
+                    std::chrono::milliseconds(1000)
+                );
+            } else {
+                events.emplace_back(
+                    std::chrono::system_clock::now(),
+                    &signals.buttons[cmd.floor][cmd.selector],
+                    std::chrono::milliseconds(100)
+                );
+            }
             break;
         case CommandSignal::LIGHT:
             signals.lights[cmd.floor] = cmd.value;

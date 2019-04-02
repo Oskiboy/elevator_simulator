@@ -267,7 +267,7 @@ command_t ElevServer::parseMessage(const char msg[4]) {
             cmd.value   = msg[1];
             break;
         case 2:
-            cmd.signal      = CommandSignal::BUTTON;
+            cmd.signal      = CommandSignal::LIGHT;
             cmd.selector    = msg[1];
             cmd.floor       = msg[2];
             cmd.value       = msg[3];
@@ -297,8 +297,11 @@ command_t ElevServer::parseMessage(const char msg[4]) {
             cmd.signal = CommandSignal::OBSTRUCTION;
             break;
         case 10:
-            cmd.signal  = CommandSignal::BUTTON;
-            cmd.cmd     = CommandType::SET;
+            cmd.signal      = CommandSignal::BUTTON;
+            cmd.cmd         = CommandType::SET;
+            cmd.selector    = msg[1];
+            cmd.floor       = msg[2];
+            cmd.value       = msg[3];
             break;
         case 255:
             cmd.signal  = CommandSignal::POSITION;
