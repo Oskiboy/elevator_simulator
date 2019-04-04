@@ -118,6 +118,11 @@ int elev_get_button_signal(elev_button_type_t button, int floor);
 */
 void elev_set_button_lamp(elev_button_type_t button, int floor, int value);
 
-int write_to_socket(char* cmd);
-
 #endif // #ifndef __INCLUDE_DRIVER_H__
+
+#ifndef WRAPPER_H
+#define WRAPPER_H
+
+int write_to_socket(char cmd[4]);
+
+#endif

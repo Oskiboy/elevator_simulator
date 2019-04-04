@@ -33,7 +33,7 @@ int main(int argc, char** argv) {
     }
 
     while(running)
-        ;
+        sleep(1);
     
     std::cout << "Sending stop signal to server..." << std::endl;
     e_ptr->stop();
