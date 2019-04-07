@@ -210,7 +210,10 @@ void ElevServer::handleConnections() {
         }
     }
 
-    close(conn_fd);
+    ret = close(conn_fd);
+    if(ret < 0) {
+        logger.error("Error closing connection to client! ERROR CODE: " + std::to_string(errno));
+    }
     conn_mtx.unlock();
 }
 
