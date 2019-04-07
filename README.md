@@ -163,6 +163,10 @@ For use in code send TCP socket messages send four bytes with the command.
 
 ## Extra commands for emulated elevator interaction
 
+### TODO:
+
+This should be expanded with: resetting elevator, setting position, 
+
 <table>
     <tbody>
         <tr>
