@@ -163,10 +163,6 @@ For use in code send TCP socket messages send four bytes with the command.
 
 ## Extra commands for emulated elevator interaction
 
-### TODO:
-
-This should be expanded with: resetting elevator, setting position, 
-
 <table>
     <tbody>
         <tr>
@@ -182,7 +178,28 @@ This should be expanded with: resetting elevator, setting position,
             <td>floor<br>[0..NF]</td>
             <td>duration(in 10 ms)<br>[0..255]</td>
         </tr>
-            <td colspan="0"><em>Type: [0,1,2] are for buttons, 3 is stop and 4 is for the obstruction button.</em></td>
+            <td colspan="0"><em>Type: [0,1,2] are for buttons.<br> 3 is stop and 4 is for the obstruction button.</em></td>
+        <tr>
+            <td><em>Get light</em></td>
+            <td>&nbsp;&nbsp;11&nbsp;&nbsp;</td>
+            <td>type<br>[0..4]</td>
+            <td>floor<br>[0..NF]</td>
+            <td>X</td>
+        </tr>
+        <tr>
+            <td><em>Set position</em></td>
+            <td>&nbsp;&nbsp;253&nbsp;&nbsp;</td>
+            <td>X</td>
+            <td>X</td>
+            <td>Position<br>[0..255]</td>
+        </tr>
+        <tr>
+            <td><em>Reset Elevator</em></td>
+            <td>&nbsp;&nbsp;254&nbsp;&nbsp;</td>
+            <td>X</td>
+            <td>X</td>
+            <td>X</td>
+        </tr>
         <tr>
             <td><em>Get position</em></td>
             <td>&nbsp;&nbsp;255&nbsp;&nbsp;</td>
