@@ -191,7 +191,7 @@ void ElevServer::handleConnections() {
     char *response = handleMessage(buffer);
     
     //If the command type is more than five the connection expects an answer.
-    if(buffer[0] > 5 && buffer[0] != -1) {
+    if(buffer[0] > 5 && buffer[0] < 100) {
         ret = write(conn_fd, response, 4*sizeof(char));
         if(ret < 0) {
             logger.fatal("Could not write to the connection");
@@ -307,13 +307,21 @@ command_t ElevServer::parseMessage(const char msg[4]) {
             cmd.floor       = msg[2];
             cmd.value       = msg[3];
             break;
-        case 243: //Set position
-            cmd.cmd     = CommandType::SET;
-            cmd.signal  = CommandSignal::POSITION;
-            cmd.value   = msg[3];
+        case 11:
+            cmd.cmd         = CommandType::GET;
+            cmd.signal      = CommandSignal::LIGHT;
+            cmd.selector    = msg[1];
+            cmd.floor       = msg[2];
+            cmd.value       = 0;
             break;
-        case 244: //Reset elevator
-            logger.error("Command 244 not yet implemented!");
+        case 253: //Set position
+            cmd.cmd         = CommandType::SET;
+            cmd.signal      = CommandSignal::POSITION;
+            cmd.value       = msg[3];
+            break;
+        case 254: //Reset elevator
+            cmd.cmd     = CommandType::SET;
+            cmd.signal  = CommandSignal::RESET;
             break;
         case 255: //Get position
             cmd.signal  = CommandSignal::POSITION;

@@ -32,15 +32,15 @@ typedef struct {
 } motor_t;
 
 typedef struct {
-    button_t    buttons;
-    light_t     lights;
-    std::atomic<int> obstruction;
-    std::atomic<int>         door_light;
-    std::atomic<int>         stop;
-    std::atomic<int>         stop_light;
-    std::atomic<int>         floor_sensor;
-    motor_t     motor;
-    std::atomic<double>      position;
+    button_t            buttons;
+    light_t             lights;
+    std::atomic<int>    obstruction;
+    std::atomic<int>    door_light;
+    std::atomic<int>    stop;
+    std::atomic<int>    stop_light;
+    std::atomic<int>    floor_sensor;
+    motor_t             motor;
+    std::atomic<double> position;
 } ElevatorSignals_t;
 
 typedef std::chrono::time_point<std::chrono::system_clock> sysclk_t;
@@ -70,6 +70,8 @@ class Elevator {
         int     getSignal(const command_t &cmd);
         void    setSignal(const command_t &cmd);
 
+        void    resetSelf(void);
+
     private:
         const std::atomic<int> _id;
         int _num_floors;
@@ -77,8 +79,8 @@ class Elevator {
         std::atomic<bool> running;
 
         //Signals
-        ElevatorSignals_t signals;
-        std::vector<ButtonPress> events;
+        ElevatorSignals_t           signals;
+        std::vector<ButtonPress>    events;
 
         //Motor stuff
         std::atomic<Direction>   _last_dir;
