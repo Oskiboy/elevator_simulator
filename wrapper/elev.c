@@ -26,6 +26,10 @@ static struct sockaddr_in servaddr;
 static unsigned char cmd[4];
 
 int write_to_socket(unsigned char _cmd[4]) {
+    if(_cmd[0] == 255) {
+        return 0;
+    }
+    
     int ret = 0;
     elev_init();
     // socket create and verification 
