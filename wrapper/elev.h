@@ -123,6 +123,6 @@ void elev_set_button_lamp(elev_button_type_t button, int floor, int value);
 #ifndef WRAPPER_H
 #define WRAPPER_H
 
-int write_to_socket(char cmd[4]);
+int write_to_socket(unsigned char cmd[4]);
 
 #endif
