@@ -23,53 +23,50 @@
 
 static int sockfd;
 static struct sockaddr_in servaddr;
-static char cmd[4];
+static unsigned char cmd[4];
 
-int write_to_socket(char _cmd[4]) {
+int write_to_socket(unsigned char _cmd[4]) {
     int ret = 0;
     elev_init();
-    if (connect(sockfd, (struct sockaddr*)&servaddr, sizeof(servaddr)) != 0) { 
-        printf("ERROR - Connection to the server failed... ERROR: %d\n", errno); 
-        exit(0); 
-    }
-
-    //printf("Sent: [%d,%d,%d,%d]\n", _cmd[0],_cmd[1],_cmd[2],_cmd[3]);
-
-    ret = send(sockfd, _cmd, 4 * sizeof(_cmd[0]), 0);
-    if(ret < 0) {
-        printf("ERROR - could not read from socket\n");
-    }
-    if((unsigned char) _cmd[0] > 5) {
-        char buffer[4];
-        bzero(&buffer, sizeof(buffer));
-        read(sockfd, buffer, sizeof(buffer));
-        close(sockfd);
-        return buffer[1];
-    }
-    close(sockfd);
-    return 0;
-}
-
-
-int elev_init(void) {   
-    // socket create and varification 
+    // socket create and verification 
     sockfd = socket(AF_INET, SOCK_STREAM, 0); 
     if (sockfd == -1) { 
         printf(" ERROR - Socket creation failed...\n"); 
         exit(0); 
     }
 
+    //Connect to the server.
+    ret = connect(sockfd, (struct sockaddr*)&servaddr, sizeof(servaddr));
+    if (ret < 0) { 
+        printf("ERROR - Connection to the server failed... ERROR: %d\n", errno); 
+        exit(0); 
+    }
+
+    //Send our command to the server.
+    ret = send(sockfd, _cmd, 4 * sizeof(_cmd[0]), 0);
+    if(ret < 0) {
+        printf("ERROR - could not read from socket\n");
+    }
+
+    if(_cmd[0] > 5) {
+        char buffer[4];
+        bzero(&buffer, sizeof(buffer));
+        read(sockfd, buffer, sizeof(buffer));
+        close(sockfd);
+        return buffer[1];
+    }
+
+    close(sockfd);
+    return 0;
+}
+
+
+int elev_init(void) {   
     // assign IP, PORT 
     memset(&servaddr, 0, sizeof(servaddr));
     servaddr.sin_family = AF_INET;
     servaddr.sin_port = htons(PORT);
     servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
-    /*
-    if (connect(sockfd, (struct sockaddr*)&servaddr, sizeof(servaddr)) != 0) { 
-        printf("ERROR - Connection to the server failed...\n"); 
-        exit(0); 
-    }
-    */
     return 1;
 }
 
@@ -102,8 +99,7 @@ int elev_get_stop_signal(void) {
     cmd[1] = 0;
     cmd[2] = 0;
     cmd[3] = 0;
-    int ret = write_to_socket(cmd);
-    return ret;
+    return write_to_socket(cmd);
 }
 
 void elev_set_stop_lamp(int value) {
