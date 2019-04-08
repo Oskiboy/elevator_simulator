@@ -89,7 +89,7 @@ void Elevator::updateSignals(void) {
     //if the elevator is close enough to a floor. 
     for(int i = 0; i < 4; ++i) {
         if(std::abs(signals.position - (i * TRACK_LENGTH / 3.0)) < 0.01) {
-            signals.floor_sensor = i + 1;
+            signals.floor_sensor = i;
             break;
         } else {
             signals.floor_sensor = -1;
@@ -125,8 +125,6 @@ void Elevator::resetSelf(void) {
     signals.motor.direction = Direction::STOP;
     signals.position = 12.0;
     _last_dir = Direction::STOP;
-    
-
 }
 
 
