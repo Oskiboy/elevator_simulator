@@ -98,7 +98,6 @@ void Elevator::updateSignals(void) {
     for(auto it = events.begin(); it != events.end();) {
         if(it->poll()) {
             it = events.erase(it);
-            std::cout << events.size() << std::endl;
         } else {
             it++;
         }

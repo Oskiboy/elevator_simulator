@@ -183,7 +183,9 @@ void ElevServer::handleConnections() {
 
     std::string msg = "[";
     for(int i = 0; i < 4; ++i) {
-        msg += std::to_string(buffer[i]) + " ";
+        msg += std::to_string(buffer[i]) ;
+        if(i != 3)
+            msg += " ";
     }
     logger.info("New message received: " + msg + "]");
 
@@ -233,6 +235,14 @@ char* ElevServer::createResponse(const command_t &cmd) {
         response[1] = cmd.value;
         response[2] = cmd.floor;
         response[3] = cmd.msg[3];
+        if(response[0] == 7) {
+            if(cmd.value < 0) {
+                response[1] = 0;
+            } else {
+                response[1] = 1;
+                response[2] = cmd.value;
+            }
+        }
     } else {
         response[0] = 255;
         response[1] = 255;
@@ -248,8 +258,6 @@ char* ElevServer::createResponse(const command_t &cmd) {
 }
 
 command_t ElevServer::parseMessage(const char msg[4]) {
-    //TODO: This needs some cleanup and/or a neater solution
-
     //Zero initialize a new command
     command_t cmd { 
         .cmd        = (msg[0] > 5) ? CommandType::GET : CommandType::SET,
@@ -321,7 +329,6 @@ command_t ElevServer::parseMessage(const char msg[4]) {
             cmd.cmd         = CommandType::SET;
             cmd.signal      = CommandSignal::POSITION;
             cmd.value       = static_cast<unsigned char>(msg[3]);
-            std::cout << cmd.value << std::endl;
             break;
         case 254: //Reset elevator
             cmd.cmd     = CommandType::SET;
