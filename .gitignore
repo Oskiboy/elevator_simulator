@@ -2,3 +2,4 @@ build/
 .vscode/
 *.log
 logs/
+libelev_wrapper.a

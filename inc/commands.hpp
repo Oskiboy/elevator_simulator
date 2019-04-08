@@ -19,6 +19,7 @@ enum class CommandSignal {
     STOP_LIGHT,
     MOTOR,
     POSITION,
+    RESET,
     NUM_SIGNALS
 };
 

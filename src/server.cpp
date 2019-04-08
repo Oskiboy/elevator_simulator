@@ -96,7 +96,7 @@ void ElevServer::initSocket() {
     //Creating a new TCP socket.
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
     if(server_fd < 0) {
-        logger.error("Could not create socket");
+        logger.fatal("Could not create socket");
         throw SocketCreateException();
     }
     logger.info("Socket created");
@@ -113,7 +113,11 @@ void ElevServer::connectSocket() {
     int ret = 0;  
     ret = bind(server_fd, (struct sockaddr*) &serv_addr, sizeof(serv_addr));
     if(ret < 0) {
-        logger.error("Could not bind the socket");
+        if(errno == EADDRINUSE) {
+            logger.fatal("Could not bind the socket, socket already in use. Probably TIME_WAIT");
+            throw SocketBindException();
+        }
+        logger.fatal("Could not bind the socket: " + std::to_string(errno));
         throw SocketBindException();
     }
     logger.info("Socket bound to port " + std::to_string(port_num));
@@ -163,7 +167,7 @@ void ElevServer::handleConnections() {
     cli_len = sizeof(cli_addr);
     conn_fd = accept(server_fd, (struct sockaddr*) &cli_addr, &cli_len);
     if(conn_fd < 0) {
-        logger.error("Could not accept connection");
+        logger.fatal("Could not accept connection");
         throw SocketAcceptException();
     }
 
@@ -173,7 +177,7 @@ void ElevServer::handleConnections() {
     //Read the 4 bytes from the socket
     ret = read(conn_fd, buffer, 4 * sizeof(buffer[0]));
     if(ret < 0) {
-        logger.error("Could not read from the new connection");
+        logger.fatal("Could not read from the new connection");
         throw SocketReadException();
     }
 
@@ -187,26 +191,29 @@ void ElevServer::handleConnections() {
     char *response = handleMessage(buffer);
     
     //If the command type is more than five the connection expects an answer.
-    if(buffer[0] > 5 && buffer[0] != -1) {
+    if(buffer[0] > 5 && buffer[0] < 100) {
         ret = write(conn_fd, response, 4*sizeof(char));
         if(ret < 0) {
-            logger.error("Could not write to the connection");
+            logger.fatal("Could not write to the connection");
             throw SocketWriteException();
         }
     } else if((unsigned char)buffer[0] == 255) {
         ret = write(conn_fd, buffer, 4*sizeof(char));
         if(ret < 0) {
-            logger.error("Could not write to the connection");
+            logger.fatal("Could not write to the connection");
             throw SocketWriteException();
         }
         ret = write(conn_fd, (double*)&response[4], sizeof(double));
         if(ret < 0) {
-            logger.error("Could not write to the connection");
+            logger.fatal("Could not write to the connection");
             throw SocketWriteException();
         }
     }
 
-    close(conn_fd);
+    ret = close(conn_fd);
+    if(ret < 0) {
+        logger.error("Error closing connection to client! ERROR CODE: " + std::to_string(errno));
+    }
     conn_mtx.unlock();
 }
 
@@ -267,7 +274,7 @@ command_t ElevServer::parseMessage(const char msg[4]) {
             cmd.value   = msg[1];
             break;
         case 2:
-            cmd.signal      = CommandSignal::BUTTON;
+            cmd.signal      = CommandSignal::LIGHT;
             cmd.selector    = msg[1];
             cmd.floor       = msg[2];
             cmd.value       = msg[3];
@@ -297,10 +304,29 @@ command_t ElevServer::parseMessage(const char msg[4]) {
             cmd.signal = CommandSignal::OBSTRUCTION;
             break;
         case 10:
-            cmd.signal  = CommandSignal::BUTTON;
-            cmd.cmd     = CommandType::SET;
+            cmd.signal      = CommandSignal::BUTTON;
+            cmd.cmd         = CommandType::SET;
+            cmd.selector    = msg[1];
+            cmd.floor       = msg[2];
+            cmd.value       = msg[3];
             break;
-        case 255:
+        case 11:
+            cmd.cmd         = CommandType::GET;
+            cmd.signal      = CommandSignal::LIGHT;
+            cmd.selector    = msg[1];
+            cmd.floor       = msg[2];
+            cmd.value       = 0;
+            break;
+        case 253: //Set position
+            cmd.cmd         = CommandType::SET;
+            cmd.signal      = CommandSignal::POSITION;
+            cmd.value       = msg[3];
+            break;
+        case 254: //Reset elevator
+            cmd.cmd     = CommandType::SET;
+            cmd.signal  = CommandSignal::RESET;
+            break;
+        case 255: //Get position
             cmd.signal  = CommandSignal::POSITION;
             cmd.cmd     = CommandType::GET;
             break;

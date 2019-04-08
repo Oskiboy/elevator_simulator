@@ -16,7 +16,7 @@ Elevator::Elevator(int id, int num_floors):
     signals.buttons = std::make_unique<std::atomic<int>[][3]>(_num_floors);
     signals.lights = std::make_unique<std::atomic<int>[]>(_num_floors);
     signals.motor.speed = TRACK_LENGTH / TRACK_TIME;
-    signals.position = 0.1;
+    signals.position = 12;
     signals.floor_sensor = -1;
     timestamp = std::chrono::system_clock::now();
 }
@@ -89,20 +89,42 @@ void Elevator::updateSignals(void) {
     //if the elevator is close enough to a floor. 
     for(int i = 0; i < 4; ++i) {
         if(std::abs(signals.position - (i * TRACK_LENGTH / 3.0)) < 0.01) {
-            signals.floor_sensor = i + 1;
+            signals.floor_sensor = i;
             break;
         } else {
             signals.floor_sensor = -1;
         }
     }
-    std::remove_if(events.begin(), events.end(), [=](ButtonPress &b){
-            return b.poll();
+    for(auto it = events.begin(); it != events.end();) {
+        if(it->poll()) {
+            it = events.erase(it);
+            std::cout << events.size() << std::endl;
+        } else {
+            it++;
         }
-    );
+    }
 }
 
 int Elevator::getId(void) {
     return _id;
+}
+
+void Elevator::resetSelf(void) {
+    //It is important to clear the events first, so that no events have time to trigger while resetting signals.
+    events.clear();
+    for(int i = 0; i < _num_floors; ++i) {
+        signals.buttons[i][0] = 0;
+        signals.buttons[i][1] = 0;
+        signals.buttons[i][2] = 0;
+        signals.lights[i] = 0;
+    }
+    signals.obstruction = 0;
+    signals.door_light = 0;
+    signals.stop = 0;
+    signals.stop_light = 0;
+    signals.motor.direction = Direction::STOP;
+    signals.position = 12.0;
+    _last_dir = Direction::STOP;
 }
 
 
@@ -135,10 +157,25 @@ int Elevator::getSignal(const command_t &cmd) {
 void Elevator::setSignal(const command_t &cmd) {
     switch(cmd.signal) {
         case CommandSignal::BUTTON:
-            events.emplace_back(
-                std::chrono::system_clock::now(),
-                &signals.buttons[cmd.floor][cmd.selector]
-            );
+            if(cmd.selector == 3) {
+                events.emplace_back(
+                    std::chrono::system_clock::now(),
+                    &signals.stop,
+                    std::chrono::milliseconds((unsigned char)cmd.value*10)
+                );
+            } else if(cmd.selector == 4) {
+                events.emplace_back(
+                    std::chrono::system_clock::now(),
+                    &signals.obstruction,
+                    std::chrono::milliseconds((unsigned char)cmd.value*10)
+                );
+            } else {
+                events.emplace_back(
+                    std::chrono::system_clock::now(),
+                    &signals.buttons[cmd.floor][cmd.selector],
+                    std::chrono::milliseconds((unsigned char)cmd.value*10)
+                );
+            }
             break;
         case CommandSignal::LIGHT:
             signals.lights[cmd.floor] = cmd.value;
@@ -151,6 +188,12 @@ void Elevator::setSignal(const command_t &cmd) {
             break;
         case CommandSignal::MOTOR:
             signals.motor.direction = static_cast<Direction>(cmd.value);
+            break;
+        case CommandSignal::POSITION:
+            signals.position = (TRACK_LENGTH / 255.0) * static_cast<double>(cmd.value);
+            break;
+        case CommandSignal::RESET:
+            resetSelf();
             break;
         default:
             break;

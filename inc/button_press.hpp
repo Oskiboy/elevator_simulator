@@ -5,16 +5,17 @@
 #include <atomic>
 
 namespace elev {
-typedef std::chrono::time_point<std::chrono::system_clock> sysclk_t;
-
+using sysclk_t = std::chrono::time_point<std::chrono::system_clock> ;
+using msec_t = std::chrono::duration<double>;
 class ButtonPress {
     public:
-        ButtonPress(sysclk_t time, std::atomic<int>* btn);
+        ButtonPress(sysclk_t time, std::atomic<int>* btn, msec_t duration);
         ButtonPress() = delete;
         bool poll(void);
     private:
         sysclk_t pressed_at;
         std::atomic<int>* btn;
+        msec_t duration;
 };
 
 } //namespace elev
