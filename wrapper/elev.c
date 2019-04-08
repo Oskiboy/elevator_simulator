@@ -56,8 +56,12 @@ int write_to_socket(unsigned char _cmd[4]) {
         char buffer[4];
         bzero(&buffer, sizeof(buffer));
         read(sockfd, buffer, sizeof(buffer));
+        printf("%d-%d-%d-%d\n", buffer[0], buffer[1], buffer[2], buffer[3]);
         close(sockfd);
-        return buffer[1];
+        if(_cmd[0] == 7) {
+            return (buffer[1] ? buffer[2] : -1);
+        }
+        return (int)buffer[1];
     }
 
     close(sockfd);
