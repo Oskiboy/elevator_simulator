@@ -320,7 +320,8 @@ command_t ElevServer::parseMessage(const char msg[4]) {
         case 253: //Set position
             cmd.cmd         = CommandType::SET;
             cmd.signal      = CommandSignal::POSITION;
-            cmd.value       = msg[3];
+            cmd.value       = static_cast<unsigned char>(msg[3]);
+            std::cout << cmd.value << std::endl;
             break;
         case 254: //Reset elevator
             cmd.cmd     = CommandType::SET;
