@@ -1,5 +1,15 @@
 #ifndef LOGGER_HPP
 #define LOGGER_HPP
+/**
+ * @file logger.hpp
+ * @author Oskar Oestby (oskar.oestby@gmail.com)
+ * @brief 
+ * @version 0.1
+ * @date 2019-04-17
+ * 
+ * @copyright Copyright (c) 2019
+ * 
+ */
 #include <string>
 #include <fstream>
 
