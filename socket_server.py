@@ -15,9 +15,12 @@ def main(args):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.connect((args.ip, args.port))
         s.sendall(b)
-        data = s.recv(4)
-        print("Response:", struct.unpack("4b",data))
+        if int(b[0]) > 5 and int(b[0]) < 100:
+            data = s.recv(4)
+            print("Response:", struct.unpack("4b",data))
         if args.msg[0] == 255:
+            data = s.recv(4)
+            print("Response:", struct.unpack("4b",data))
             data = s.recv(8)
             print("Position: {0}".format(struct.unpack('d',data)[0]))
 

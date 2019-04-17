@@ -11,7 +11,7 @@ pipeline {
                 dir('logs') {
                     deleteDir()
                     sh '''
-                    cat >> build_logs.log <<EOF
+                    cat >> build_logs.log <<-EOF
                     BUILD LOGS INITIALIZED!
                     EOF
                     '''
@@ -31,13 +31,21 @@ pipeline {
                 sh 'echo "Build complete..."'
             }
         }
+        stage('Wrapper') {
+            steps {
+                sh '''
+                echo "Building wrapper"
+                ./build_wrapper.sh >> logs/build_logs.log
+                '''
+            }
+        }
     }
     post {
         success {
             sh '''
             echo "Build passed!"
             '''
-            archiveArtifacts artifacts: "build/sim_server"
+            archiveArtifacts artifacts: "build/sim_server, libelev_wrapper.a"
         }
         failure {
             sh '''

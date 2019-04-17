@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.0)
 project(elevator_sim_wrapper)
+set(CMAKE_C_COMPILER clang)
 
 add_compile_options(-O0 -g3 -Wall -Werror -std=gnu99)
 

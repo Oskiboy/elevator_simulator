@@ -16,7 +16,25 @@ To run the server just run the binary:
 ./build/sim_server
 ```
 
+or with a commandline:
+
+```bash
+./build/server_commander
+```
+
 This will open a little terminal with little to no functionality, but to shut the server down, write enter 'q' or 'quit'
+
+### Server commander
+
+Commands in the commandline:
+
+```bash
+>>> pos
+>>> cmd X X X X
+```
+
+`pos` will print the current position.
+`cmd X X X X` will send the command given to the elevator.
 
 ## Command set
 
@@ -139,6 +157,63 @@ For use in code send TCP socket messages send four bytes with the command.
         </tr>
         <tr>
             <td colspan="0"><em>NF = Num floors. X = Don't care.</em></td>
+        </tr>
+    </tbody>
+</table>
+
+## Extra commands for emulated elevator interaction
+
+<table>
+    <tbody>
+        <tr>
+            <td><strong>System Commands</strong></td>
+            <td align="center" colspan="4">Instruction</td>
+            <td></td>
+            <td align="center" colspan="4">Output</td>
+        </tr>
+        <tr>
+            <td><em>Push button</em></td>
+            <td>&nbsp;&nbsp;10&nbsp;&nbsp;</td>
+            <td>type<br>[0..4]</td>
+            <td>floor<br>[0..NF]</td>
+            <td>duration(in 10 ms)<br>[0..255]</td>
+        </tr>
+            <td colspan="0"><em>Type: [0,1,2] are for buttons.<br> 3 is stop and 4 is for the obstruction button.</em></td>
+        <tr>
+            <td><em>Get light</em></td>
+            <td>&nbsp;&nbsp;11&nbsp;&nbsp;</td>
+            <td>type<br>[0..4]</td>
+            <td>floor<br>[0..NF]</td>
+            <td>X</td>
+        </tr>
+        <tr>
+            <td><em>Set position</em></td>
+            <td>&nbsp;&nbsp;253&nbsp;&nbsp;</td>
+            <td>X</td>
+            <td>X</td>
+            <td>Position<br>[0..255]</td>
+        </tr>
+        <tr>
+            <td><em>Reset Elevator</em></td>
+            <td>&nbsp;&nbsp;254&nbsp;&nbsp;</td>
+            <td>X</td>
+            <td>X</td>
+            <td>X</td>
+        </tr>
+        <tr>
+            <td><em>Get position</em></td>
+            <td>&nbsp;&nbsp;255&nbsp;&nbsp;</td>
+            <td>X</td>
+            <td>X</td>
+            <td>X</td>
+            <td align="right"><em>Returns:</em></td>
+            <td>255</td>
+            <td>0</td>
+            <td>0</td>
+            <td>0</td>
+        </tr>
+        <tr>
+            <td colspan="0"><em>After the 4 bytes, read one double as well to get position.</em></td>
         </tr>
     </tbody>
 </table>
