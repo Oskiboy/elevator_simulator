@@ -1,11 +1,13 @@
-// Wrapper for libComedi Elevator control.
-// These functions provides an interface to the elevators in the real time lab
-//
-// 2007, Martin Korsgaard
 #ifndef __INCLUDE_DRIVER_H__
 #define __INCLUDE_DRIVER_H__
-
-
+/**
+ * @file elev.h
+ * @author Oskar Oestby (oskar.oestby@gmail.com)
+ * @brief The elevator hardware wrapper for the Embeded Systems course. Based on the code handed out in class.
+ * The compiled wrapper should be linked into the project instead of the object created by the handout code.
+ * @version 0.1
+ * @date 2019-04-17 
+ */
 // Number of floors
 #define N_FLOORS 4
 
@@ -123,6 +125,12 @@ void elev_set_button_lamp(elev_button_type_t button, int floor, int value);
 #ifndef WRAPPER_H
 #define WRAPPER_H
 
+/**
+ * @brief Send a command to the elevator socket server. 
+ * 
+ * @param cmd The command to be sent to the server.
+ * @return int The value returned by the server.
+ */
 int write_to_socket(unsigned char cmd[4]);
 
 #endif
