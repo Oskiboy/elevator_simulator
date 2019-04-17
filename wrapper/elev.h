@@ -8,7 +8,7 @@
  * @version 0.1
  * @date 2019-04-17 
  */
-// Number of floors
+///< Number of floors
 #define N_FLOORS 4
 
 
@@ -113,7 +113,7 @@ int elev_get_button_signal(elev_button_type_t button, int floor);
 
 /**
   Set a button lamp.
-  @param lamp Which type of lamp to set. Can be BUTTON_CALL_UP,
+  @param button Which type of lamp to set. Can be BUTTON_CALL_UP,
     BUTTON_CALL_DOWN or BUTTON_COMMAND (button "inside" the elevator).
   @param floor Floor of lamp to set. Must be 0-3
   @param value Non-zero value turns lamp on, 0 turns lamp off.
@@ -133,4 +133,4 @@ void elev_set_button_lamp(elev_button_type_t button, int floor, int value);
  */
 int write_to_socket(unsigned char cmd[4]);
 
-#endif
+#endif // #ifndef WRAPPER_H

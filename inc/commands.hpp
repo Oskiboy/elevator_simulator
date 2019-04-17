@@ -59,14 +59,14 @@ enum class ButtonType {
  * 
  */
 typedef struct {
-    CommandType     cmd;
-    CommandSignal   signal;
-    int             selector;
-    int             floor;
-    int             value;
-    int             elevator_num;
-    double          position;
-    char            msg[4];
+    CommandType     cmd;            ///< The type of command.
+    CommandSignal   signal;         ///< The signal to be acted upon.
+    int             selector;       ///< The selector, most often the floor or type of button
+    int             floor;          ///< Which floor.
+    int             value;          ///< What value should be set/is returned.
+    int             elevator_num;   ///< The elevator id.
+    double          position;       ///< The postion of the elevator.
+    char            msg[4];         ///< The message the command was generated from.
 } command_t;
 
 /**

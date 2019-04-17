@@ -22,7 +22,15 @@
 #include <sys/time.h>
 
 ///TODO: The track length should be based on a single floor to work with other than 4 floors.
+/**
+ * @def TRACK_LENGTH
+ * @brief The standard length of the track
+ */
 #define TRACK_LENGTH    (40.5)      ///Total length of the track with 4 floors.
+/**
+ * @def TRACK_TIME
+ * @brief The time it takes for the elevator to go the entire track length
+ */
 #define TRACK_TIME      (8.0)       ///Seconds per 4 floors
 
 /**
@@ -58,25 +66,26 @@ typedef std::unique_ptr<std::atomic<int>[]>    light_t;
  * 
  */
 typedef struct {
-    std::atomic<double> speed;      //< The speed of the motor.
-    Direction           direction;  //< The direction of the motor.
+    std::atomic<double> speed;      ///< The speed of the motor.
+    Direction           direction;  ///< The direction of the motor.
 } motor_t;
 
 
 /**
+ * @struct ElevatorSignals_t
  * @brief All the elevators signals is kept in this struct.
  * 
  */
 typedef struct {
-    button_t            buttons;        //< All the elevators buttons. [0] is , [1] is and [2] is
-    light_t             lights;         //< All the elevators lights
-    std::atomic<int>    obstruction;    //< The obstruction sensor of the elevator.
-    std::atomic<int>    door_light;     //< The door indicator light of the elevator.
-    std::atomic<int>    stop;           //< The stop button state.
-    std::atomic<int>    stop_light;     //< The stop light of the elevator.
-    std::atomic<int>    floor_sensor;   //< The floor sensor of the elevator.
-    motor_t             motor;          //< The current motor state.
-    std::atomic<double> position;       //< The current position of the elevator.
+    button_t            buttons;        ///< All the elevators buttons. [0] is , [1] is and [2] is
+    light_t             lights;         ///< All the elevators lights
+    std::atomic<int>    obstruction;    ///< The obstruction sensor of the elevator.
+    std::atomic<int>    door_light;     ///< The door indicator light of the elevator.
+    std::atomic<int>    stop;           ///< The stop button state.
+    std::atomic<int>    stop_light;     ///< The stop light of the elevator.
+    std::atomic<int>    floor_sensor;   ///< The floor sensor of the elevator.
+    motor_t             motor;          ///< The current motor state.
+    std::atomic<double> position;       ///< The current position of the elevator.
 } ElevatorSignals_t;
 
 /**
@@ -234,10 +243,7 @@ class Elevator {
          */
         std::vector<ButtonPress>    events;
 
-        /**
-         * @brief Deprecated. Saves the last traveled direciton.
-         * 
-         */
+        /** @brief Deprecated. Saves the last traveled direciton. */
         std::atomic<Direction>   _last_dir;
 
         
