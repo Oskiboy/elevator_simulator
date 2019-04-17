@@ -66,7 +66,7 @@ typedef struct {
     int             value;          ///< What value should be set/is returned.
     int             elevator_num;   ///< The elevator id.
     double          position;       ///< The postion of the elevator.
-    char            msg[4];         ///< The message the command was generated from.
+    unsigned char   msg[4];         ///< The message the command was generated from.
 } command_t;
 
 /**

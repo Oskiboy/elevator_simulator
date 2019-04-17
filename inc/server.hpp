@@ -77,7 +77,7 @@ class ElevServer {
          * 
          * @param msg The command message, for info see the README
          */
-        void    elevControl(char msg[4]);
+        void    elevControl(char unsigned msg[4]);
         
     private:
 
@@ -124,7 +124,7 @@ class ElevServer {
          * @param msg Message received from the connected client.
          * @return char* Response that should be sent back to the client.
          */
-        char*       handleMessage(const char msg[4]);
+        char*       handleMessage(const unsigned char msg[4]);
 
         /**
          * @brief Parse the incomming message and create a command for the elevator.
@@ -132,7 +132,7 @@ class ElevServer {
          * @param msg The message to be parsed.
          * @return command_t Command to be sent to the elevator.
          */
-        command_t   parseMessage(const char msg[4]);
+        command_t   parseMessage(const unsigned char msg[4]);
 
         /**
          * @brief Send a command to the correct elevator and return its response.

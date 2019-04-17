@@ -66,7 +66,7 @@ void ElevServer::stop(void) {
     running = false;
 }
 
-void ElevServer::elevControl(char msg[4]) {
+void ElevServer::elevControl(char unsigned msg[4]) {
     command_t cmd = parseMessage(msg);
     command_t ret = executeCommand(cmd);
     std::cout << ret << std::endl;
@@ -172,7 +172,7 @@ void ElevServer::handleConnections() {
     }
 
     //Initialize and zero out a buffer for reading from the socket
-    char buffer[4];
+    unsigned char buffer[4];
     bzero(&buffer, 4);
     //Read the 4 bytes from the socket
     ret = read(conn_fd, buffer, 4 * sizeof(buffer[0]));
@@ -219,7 +219,7 @@ void ElevServer::handleConnections() {
     conn_mtx.unlock();
 }
 
-char* ElevServer::handleMessage(const char msg[4]) {
+char* ElevServer::handleMessage(const unsigned char msg[4]) {
     command_t cmd, ret;
     cmd = parseMessage(msg);
     ret = executeCommand(cmd);
@@ -257,7 +257,7 @@ char* ElevServer::createResponse(const command_t &cmd) {
     return response;
 }
 
-command_t ElevServer::parseMessage(const char msg[4]) {
+command_t ElevServer::parseMessage(const unsigned char msg[4]) {
     //Zero initialize a new command
     command_t cmd { 
         .cmd        = (msg[0] > 5) ? CommandType::GET : CommandType::SET,
@@ -275,7 +275,7 @@ command_t ElevServer::parseMessage(const char msg[4]) {
         }
     };
 
-    switch ((unsigned char)msg[0])
+    switch (msg[0])
     {
         case 1:
             cmd.signal  = CommandSignal::MOTOR;
